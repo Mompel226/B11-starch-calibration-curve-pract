@@ -48,7 +48,7 @@ Dilute the stock a hundred-fold and work in a range the instrument can actually 
 | Stock solution | 1% | **0.01%** |
 | Standards | 0.05 – 1.00% | **0.001 – 0.006%** |
 | Absorbance range | ~1.8 – 2.2 (unreadable) | **~0.1 – 0.63** |
-| Iodine per tube | 1 drop, or 0.5 cm³ | **0.1 cm³ (100 µL), measured** |
+| Iodine per tube | 1 drop | **0.1 cm³ (100 µL), measured** |
 
 The standards now sit inside the 0.1–1.0 window, the relationship is linear, and R² comes out
 around 0.999.
