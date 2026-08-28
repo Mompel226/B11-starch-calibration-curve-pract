@@ -13,7 +13,7 @@ Almost every published version of this practical — textbooks, exam-board resou
 you find by searching — tells students to make standards from a **1% starch solution**, typically
 across a range like 0.05% to 1.00%.
 
-**That range cannot produce a calibration curve if absorbance is measure with Vernier equipment.** If your students have ever come back with a set
+**That range cannot produce a calibration curve if absorbance is measured with Vernier equipment.** If your students have ever come back with a set
 of readings that barely change from tube to tube, this is why.
 
 Two things go wrong at once, and both come from having too much starch.
