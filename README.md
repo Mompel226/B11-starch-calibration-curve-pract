@@ -5,8 +5,6 @@
 A complete, classroom-tested set of materials for the starch–iodine calibration practical:
 worksheet, self-calculating results workbook, and an optional guide to doing the analysis in R.
 
-**Live site:** https://USERNAME.github.io/REPONAME/
-
 ---
 
 ## Why this exists: the 1% starch problem
