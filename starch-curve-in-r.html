@@ -1,0 +1,1413 @@
+<meta charset="utf-8">
+<meta name="author" content="Dr Daniel Mompel Riera">
+<title>Starch Curves in R</title>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Spectral:ital,wght@0,400;0,600;1,400&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+:root{
+  --ink:#14171F; --ink2:#3D4453; --ink3:#6C7488;
+  --paper:#FCFCFD; --surface:#F1F2F7; --sunk:#E9EBF3; --rule:#DEE0EA;
+  --indigo:#2E3A8C; --indigo-ink:#2E3A8C; --indigo-soft:#E7E9F7;
+  --amber:#8F5310; --amber-soft:#FAEFE0;
+  --teal:#0A6455; --teal-soft:#E0EFEB; --btn-bg:#2E3A8C; --btn-fg:#FFFFFF;
+  --c1:#3A46A8; --c2:#B4741A; --c3:#0E7A66; --c4:#A8326B;
+  --map-bg:#F7F8FC; --map-base:#DFE2ED; --map-line:#C5C9DA;
+  --shadow:0 1px 2px rgba(20,23,31,.05),0 8px 24px -12px rgba(20,23,31,.18);
+  --sans:"IBM Plex Sans",-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;
+  --serif:Spectral,Georgia,"Times New Roman",serif;
+  --mono:"IBM Plex Mono",Menlo,Consolas,"Courier New",monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --ink:#E9EBF2; --ink2:#B4BACB; --ink3:#848CA1;
+  --paper:#111319; --surface:#1A1D26; --sunk:#22262F; --rule:#2C303C;
+  --indigo:#9EA9F0; --indigo-ink:#B7BFF6; --indigo-soft:#1D2240;
+  --amber:#DFA664; --amber-soft:#2A2114;
+  --teal:#5FC7B1; --teal-soft:#0E2723; --btn-bg:#9EA9F0; --btn-fg:#111319;
+  --c1:#9EA9F0; --c2:#E8B473; --c3:#5FC7B1; --c4:#F08BB4;
+  --map-bg:#161A23; --map-base:#262C3A; --map-line:#39415470;
+  --shadow:0 1px 2px rgba(0,0,0,.4),0 8px 24px -12px rgba(0,0,0,.6);
+}}
+:root[data-theme="dark"]{
+  --ink:#E9EBF2; --ink2:#B4BACB; --ink3:#848CA1;
+  --paper:#111319; --surface:#1A1D26; --sunk:#22262F; --rule:#2C303C;
+  --indigo:#9EA9F0; --indigo-ink:#B7BFF6; --indigo-soft:#1D2240;
+  --amber:#DFA664; --amber-soft:#2A2114;
+  --teal:#5FC7B1; --teal-soft:#0E2723; --btn-bg:#9EA9F0; --btn-fg:#111319;
+  --c1:#9EA9F0; --c2:#E8B473; --c3:#5FC7B1; --c4:#F08BB4;
+  --map-bg:#161A23; --map-base:#262C3A; --map-line:#39415470;
+  --shadow:0 1px 2px rgba(0,0,0,.4),0 8px 24px -12px rgba(0,0,0,.6);
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--sans);
+  font-size:16.5px;line-height:1.72;-webkit-font-smoothing:antialiased}
+.wrap{position:relative;max-width:904px;margin:0 auto;padding:0 22px 96px}
+
+/* ---------- rail ---------- */
+nav.rail{display:none}
+@media(min-width:1368px){
+  nav.rail{display:block;position:fixed;top:0;width:186px;
+    left:calc(50% - 452px - 214px);max-height:100vh;
+    overflow-y:auto;padding:40px 0 40px;font-size:13.5px;line-height:1.45}
+  nav.rail h2{font:600 11px/1 var(--sans);letter-spacing:.13em;text-transform:uppercase;
+    color:var(--ink3);margin:0 0 14px}
+  nav.rail ol{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:2px}
+  nav.rail a{display:block;padding:5px 10px;border-radius:5px;color:var(--ink2);
+    text-decoration:none;border-left:2px solid transparent}
+  nav.rail a:hover{background:var(--surface);color:var(--ink)}
+  nav.rail a.on{color:var(--indigo-ink);border-left-color:var(--indigo);background:var(--indigo-soft);font-weight:500}
+  nav.rail .grp{margin-top:16px}
+}
+main{min-width:0;padding-top:40px}
+
+/* ---------- masthead ---------- */
+header.top{border-bottom:1px solid var(--rule);padding-bottom:34px;margin-bottom:14px}
+.eyebrow{font:500 11.5px/1 var(--sans);letter-spacing:.15em;text-transform:uppercase;color:var(--indigo-ink)}
+h1{font-family:var(--serif);font-weight:600;font-size:clamp(2.1rem,4.6vw,3.15rem);
+  line-height:1.08;letter-spacing:-.015em;margin:16px 0 0;text-wrap:balance}
+.stand{font-family:var(--serif);font-style:italic;font-size:1.12rem;color:var(--ink2);
+  margin:14px 0 0;max-width:64ch}
+.meta{display:flex;flex-wrap:wrap;gap:10px;margin-top:24px}
+.chip{font-size:12.5px;padding:5px 11px;border-radius:100px;background:var(--surface);
+  color:var(--ink2);border:1px solid var(--rule)}
+
+/* ---------- sections ---------- */
+section{padding-top:52px;scroll-margin-top:24px}
+h2{font-family:var(--serif);font-weight:600;font-size:1.72rem;line-height:1.2;
+  margin:0 0 6px;letter-spacing:-.01em;text-wrap:balance;display:flex;gap:14px;align-items:baseline}
+h2 .num{font-family:var(--mono);font-size:.78rem;font-weight:500;color:var(--indigo-ink);
+  letter-spacing:.05em;flex:none;padding-top:2px}
+h3{font-size:1.02rem;font-weight:600;margin:32px 0 8px;letter-spacing:-.005em}
+p{margin:0 0 14px}
+main a{color:var(--indigo-ink);text-decoration-color:color-mix(in srgb,var(--indigo) 40%,transparent);
+  text-underline-offset:2px}
+main a:hover{text-decoration-color:var(--indigo)}
+:focus-visible{outline:2px solid var(--indigo);outline-offset:3px;border-radius:3px}
+strong{font-weight:600;color:var(--ink)}
+ul,ol{padding-left:20px;margin:0 0 14px}
+li{margin-bottom:7px}
+em.term{font-style:normal;font-weight:600;color:var(--indigo-ink)}
+.vs{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin:20px 0 22px}
+.vs>div{border:1px solid var(--rule);border-radius:9px;padding:14px 16px;background:var(--surface)}
+.vs .x{border-top:3px solid var(--amber)}
+.vs .r{border-top:3px solid var(--indigo)}
+.vs h4{margin:0 0 8px;font:600 11px/1 var(--sans);letter-spacing:.12em;text-transform:uppercase}
+.vs .x h4{color:var(--amber)} .vs .r h4{color:var(--indigo-ink)}
+.vs p{margin:0 0 9px;font-size:14.5px;max-width:none;color:var(--ink2)}
+.vs p:last-child{margin-bottom:0}
+.vs strong{color:var(--ink)}
+@media(max-width:620px){.vs{grid-template-columns:1fr}}
+code{font-family:var(--mono);font-size:.87em;background:var(--sunk);color:var(--ink);
+  padding:.12em .38em;border-radius:4px;border:1px solid var(--rule)}
+
+/* ---------- code blocks ---------- */
+.code{margin:20px 0 24px;border:1px solid var(--rule);border-radius:9px;overflow:hidden;
+  background:var(--surface);box-shadow:var(--shadow)}
+.code .bar{display:flex;align-items:center;justify-content:space-between;gap:12px;
+  padding:8px 10px 8px 14px;background:var(--sunk);border-bottom:1px solid var(--rule)}
+.code .tag{font:500 11px/1 var(--mono);letter-spacing:.09em;text-transform:uppercase;color:var(--ink3)}
+.copy{font:500 12px/1 var(--sans);color:var(--ink2);background:var(--paper);
+  border:1px solid var(--rule);border-radius:6px;padding:6px 11px;cursor:pointer;
+  transition:background .13s,color .13s,border-color .13s}
+.copy:hover{color:var(--indigo-ink);border-color:var(--indigo)}
+.copy.done{color:var(--teal);border-color:var(--teal)}
+.code pre{margin:0;padding:15px 16px;overflow-x:auto;font-family:var(--mono);
+  font-size:13.6px;line-height:1.62;tab-size:2}
+.code pre code{background:none;border:0;padding:0;font-size:inherit;color:var(--ink)}
+.hljs-keyword,.hljs-literal{color:var(--indigo-ink);font-weight:500}
+.hljs-string{color:var(--teal)}
+.hljs-number{color:var(--amber)}
+.hljs-comment{color:var(--ink3);font-style:italic}
+.hljs-title,.hljs-built_in{color:var(--ink);font-weight:500}
+.out{background:var(--paper)}
+.out pre{color:var(--ink2)}
+
+/* ---------- callouts ---------- */
+.note{border-left:3px solid var(--indigo);background:var(--indigo-soft);
+  padding:14px 18px;border-radius:0 8px 8px 0;margin:20px 0}
+.warn{border-left:3px solid var(--amber);background:var(--amber-soft);
+  padding:14px 18px;border-radius:0 8px 8px 0;margin:20px 0}
+.good{border-left:3px solid var(--teal);background:var(--teal-soft);
+  padding:14px 18px;border-radius:0 8px 8px 0;margin:20px 0}
+.note p:last-child,.warn p:last-child,.good p:last-child{margin-bottom:0}
+.note .tiny,.warn .tiny,.good .tiny{font-size:13px;color:var(--ink3)}
+.lbl{display:block;font:600 11px/1 var(--sans);letter-spacing:.12em;text-transform:uppercase;
+  margin-bottom:7px}
+.note .lbl{color:var(--indigo-ink)} .warn .lbl{color:var(--amber)} .good .lbl{color:var(--teal)}
+
+/* ---------- download cards ---------- */
+.cards{display:grid;gap:14px;margin:22px 0 8px}
+@media(min-width:640px){.cards{grid-template-columns:1fr 1fr}}
+.card{display:block;text-decoration:none;color:inherit;border:1px solid var(--rule);
+  border-radius:10px;padding:18px 20px;background:var(--surface);transition:border-color .14s,transform .14s}
+.card:hover{border-color:var(--indigo);transform:translateY(-2px)}
+.card .k{font:500 11px/1 var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--ink3)}
+.card .t{font-family:var(--serif);font-size:1.2rem;font-weight:600;margin:8px 0 5px;color:var(--indigo-ink)}
+.card .d{font-size:13.6px;color:var(--ink2);line-height:1.5;margin:0}
+.card .u{font-family:var(--mono);font-size:11.5px;color:var(--ink3);margin-top:10px;word-break:break-all}
+
+/* ---------- tables ---------- */
+.tw{overflow-x:auto;margin:20px 0 24px;border:1px solid var(--rule);border-radius:9px}
+table{border-collapse:collapse;width:100%;font-size:14.6px}
+th{text-align:left;font-weight:600;font-size:11.5px;letter-spacing:.08em;text-transform:uppercase;
+  color:var(--ink3);background:var(--sunk);padding:10px 14px;white-space:nowrap}
+td{padding:10px 14px;border-top:1px solid var(--rule);vertical-align:top}
+td:first-child{white-space:nowrap}
+td code{white-space:nowrap}
+footer{margin-top:72px;padding-top:24px;border-top:1px solid var(--rule);
+  font-size:13.5px;color:var(--ink3)}
+@media(prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+
+/* ---------- progressive reveal ---------- */
+.tier[hidden]{display:none}
+.tier{animation:rise .34s ease both}
+#showcase{padding-top:22px}
+#showcase>.taste:first-of-type{margin-top:0}
+@keyframes rise{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+/* ---------- interactive 3D panel ---------- */
+.p3d{position:relative;border-radius:10px;overflow:hidden;border:1px solid var(--rule);
+  background:var(--paper)}
+.p3d canvas{display:block;width:100%;aspect-ratio:812/470;touch-action:none;cursor:grab}
+.p3d canvas:active{cursor:grabbing}
+.p3d canvas:focus-visible{outline:2px solid var(--indigo);outline-offset:-3px}
+.p3d-reset{position:absolute;right:13px;top:12px;font:500 11.5px/1 var(--sans);
+  color:var(--ink2);background:var(--surface);border:1px solid var(--rule);border-radius:100px;
+  padding:6px 12px;cursor:pointer;transition:border-color .14s,color .14s}
+.p3d-reset:hover,.p3d-reset:focus-visible{border-color:var(--indigo);color:var(--indigo-ink)}
+.p3d-hint{position:absolute;right:13px;bottom:11px;font:500 11.5px/1 var(--sans);
+  color:var(--ink3);letter-spacing:.045em;pointer-events:none}
+.p3d-key{display:flex;flex-wrap:wrap;gap:18px;margin-top:12px;
+  font:500 12.5px/1 var(--sans);color:var(--ink2)}
+.p3d-key span{display:inline-flex;align-items:center;gap:7px}
+.p3d-key i{width:10px;height:10px;border-radius:50%;display:block;flex:none}
+.p3d-key .k1{background:var(--indigo)}
+.p3d-key .k2{background:var(--amber)}
+.p3d-key .k3{background:var(--teal)}
+
+.gate{margin:60px 0 8px;padding:28px 30px;border:1px solid var(--rule);border-radius:12px;
+  background:var(--surface);box-shadow:var(--shadow)}
+.gate[hidden]{display:none}
+.g-kicker{font:600 11px/1 var(--sans);letter-spacing:.13em;text-transform:uppercase;
+  color:var(--indigo-ink);margin:0 0 10px}
+.g-line{margin:0 0 20px;color:var(--ink2)}
+.g-btn{font:600 15px/1 var(--sans);color:var(--btn-fg);background:var(--btn-bg);border:0;
+  border-radius:8px;padding:13px 22px;cursor:pointer;transition:filter .13s,transform .13s}
+.g-btn:hover{filter:brightness(1.12);transform:translateY(-1px)}
+.g-tiny{margin:15px 0 0;font-size:13px;color:var(--ink3)}
+
+/* ---------- the taste of the output ---------- */
+.taste{margin:38px 0 0;padding:24px 26px;border:1px solid var(--rule);border-radius:12px;
+  background:var(--surface)}
+.taste svg{width:100%;height:auto;display:block;margin:0 auto}
+.taste .ax{stroke:var(--ink3);stroke-width:1.4}
+.taste .fitline{stroke:var(--amber);stroke-width:2.6;stroke-linecap:round}
+.taste .pt-in{fill:var(--indigo)}
+.taste .pt-out{fill:var(--ink3);opacity:.45}
+.taste text{font-family:var(--sans);font-size:11px;fill:var(--ink3)}
+.taste .lab-fit{fill:var(--indigo-ink);font-weight:600}
+.taste .cap{margin:18px 0 0;font-size:14px;line-height:1.62;color:var(--ink2);max-width:none}
+
+/* ---------- inline expander ---------- */
+details.more{margin:28px 0 0;border:1px solid var(--rule);border-radius:10px;
+  background:var(--surface)}
+details.more summary{cursor:pointer;padding:14px 18px;font-weight:600;font-size:15px;
+  color:var(--indigo-ink);list-style:none}
+details.more summary::-webkit-details-marker{display:none}
+details.more summary::before{content:"+   ";font-family:var(--mono);color:var(--ink3)}
+details.more[open] summary::before{content:"\2212   "}
+details.more[open] summary{border-bottom:1px solid var(--rule)}
+.more-body{padding:2px 18px 20px}
+.more-body h3:first-of-type{margin-top:22px}
+@media(min-width:1080px){nav.rail.hide{visibility:hidden}}
+
+/* ---------- the "one line in R" figures ---------- */
+.taste.fig{margin:22px 0 0;padding:20px 22px}
+.taste.fig .cap{margin:16px 0 0;max-width:none}
+.taste.fig svg{max-width:100%}
+.taste .ax{stroke:var(--ink3);stroke-width:1.1}
+.taste .zero{stroke:var(--ink3);stroke-width:.8;stroke-dasharray:3 3;opacity:.7}
+.taste .spark{fill:none;stroke:var(--indigo);stroke-width:1.7;stroke-linejoin:round}
+.taste .pt{font-family:var(--sans);font-size:10px;font-weight:600;fill:var(--ink2)}
+.taste .tk{font-family:var(--sans);font-size:9.5px;fill:var(--ink3)}
+.taste .axl{font-family:var(--sans);font-size:10.5px;font-weight:500;fill:var(--ink2)}
+/* group 1 keeps the indigo and group 2 the amber across BOTH panels */
+.taste .b1{fill:var(--indigo);opacity:.5}
+.taste .b2{fill:var(--amber);opacity:.5}
+.taste .eb1{stroke:var(--indigo);stroke-width:1.6}
+.taste .eb2{stroke:var(--amber);stroke-width:1.6}
+.taste .d1{fill:var(--indigo);opacity:.85}
+.taste .d2{fill:var(--amber);opacity:.9}
+.taste .gl1{fill:var(--indigo-ink);font-weight:600}
+.taste .gl2{fill:var(--amber);font-weight:600}
+.taste .tiny{color:var(--ink3);font-size:12.5px}
+.taste .cplot{fill:var(--map-bg)}
+.taste .cgrid{stroke:var(--rule);stroke-width:.7;opacity:.75}
+.taste .cax{stroke:var(--ink3);stroke-width:1;opacity:.6}
+.taste .ctk{fill:var(--ink3);font:400 10px/1 var(--sans)}
+.taste .caxl{fill:var(--ink2);font:500 11.5px/1 var(--sans)}
+.taste .cfit{stroke:var(--indigo);stroke-width:1.7;opacity:.85}
+.taste .cx{stroke:var(--indigo);stroke-width:1.9;stroke-linecap:round;fill:none}
+.taste .ceq{fill:var(--ink2);font:600 12px/1 var(--mono)}
+.taste .ceq2{fill:var(--indigo-ink);font:600 12px/1 var(--mono)}
+/* ---------- composed map + small-multiples figure ---------- */
+.taste .ftitle{fill:var(--ink);font:600 14px/1 var(--sans)}
+.taste .fsub{fill:var(--ink3);font:400 11.5px/1 var(--sans)}
+.taste .fnote{fill:var(--ink3);font:400 11px/1 var(--sans)}
+.taste .mbg{fill:var(--map-bg)}
+.taste .mbase{fill:var(--map-base);stroke:var(--map-line);stroke-width:.5;fill-rule:evenodd}
+.taste .mframe{fill:none;stroke:var(--rule);stroke-width:1}
+.taste .mc1{fill:var(--c1);fill-rule:evenodd} .taste .mc2{fill:var(--c2);fill-rule:evenodd}
+.taste .mc3{fill:var(--c3);fill-rule:evenodd} .taste .mc4{fill:var(--c4);fill-rule:evenodd}
+.taste .mlab{font:600 10px/1 var(--sans);paint-order:stroke;stroke:var(--map-bg);
+  stroke-width:3.2;stroke-linejoin:round}
+.taste .lc1{fill:var(--c1)} .taste .lc2{fill:var(--c2)}
+.taste .lc3{fill:var(--c3)} .taste .lc4{fill:var(--c4)}
+.taste .ptitle{font:600 11.5px/1 var(--sans)}
+.taste .pbg{fill:var(--map-bg);stroke:var(--rule);stroke-width:.8}
+.taste .pband{fill:var(--ink3);opacity:.10}
+.taste .pgrid{stroke:var(--rule);stroke-width:.7}
+.taste .pzero{stroke:var(--ink3);stroke-width:1;stroke-dasharray:3 3;opacity:.75}
+.taste .pax{stroke:var(--rule);stroke-width:1}
+.taste .ptk{fill:var(--ink3);font:400 9.5px/1 var(--sans)}
+.taste .paxl{fill:var(--ink2);font:500 11px/1 var(--sans)}
+.taste .pdim{fill:var(--ink3);font-size:10px}
+.taste .pmin{font:600 9.5px/1 var(--sans);fill:var(--ink2);paint-order:stroke;
+  stroke:var(--map-bg);stroke-width:3.4;stroke-linejoin:round}
+.taste .sc1{fill:none;stroke:var(--c1);stroke-width:1.9;stroke-linejoin:round;stroke-linecap:round}
+.taste .sc2{fill:none;stroke:var(--c2);stroke-width:1.9;stroke-linejoin:round;stroke-linecap:round}
+.taste .sc3{fill:none;stroke:var(--c3);stroke-width:1.9;stroke-linejoin:round;stroke-linecap:round}
+.taste .sc4{fill:none;stroke:var(--c4);stroke-width:1.9;stroke-linejoin:round;stroke-linecap:round}
+.taste .ac1{fill:var(--c1);opacity:.15} .taste .ac2{fill:var(--c2);opacity:.15}
+.taste .ac3{fill:var(--c3);opacity:.15} .taste .ac4{fill:var(--c4);opacity:.15}
+.taste .dc1{fill:var(--c1)} .taste .dc2{fill:var(--c2)}
+.taste .dc3{fill:var(--c3)} .taste .dc4{fill:var(--c4)}
+.taste .cap+.cap{margin-top:10px}
+.lc2x,.lc3x,.lc4x{font-weight:600}
+.lc2x{color:var(--c2)} .lc3x{color:var(--c3)} .lc4x{color:var(--c4)}
+.gl1x{font-weight:600;color:var(--indigo-ink)}
+.gl2x{font-weight:600;color:var(--amber)}
+</style>
+
+<div class="wrap">
+<nav class="rail" aria-label="Sections">
+  <h2>Contents</h2>
+  <ol id="toc"></ol>
+</nav>
+
+<main>
+<header class="top">
+  <div class="eyebrow">IB Biology · B1.1 · Companion to the workbook</div>
+  <h1>Starch curves in R</h1>
+  <p class="stand">Free software for turning numbers into figures and statistics. Before any
+  explanation &mdash; two things it does that a spreadsheet cannot.</p>
+  <div class="meta">
+    <span class="chip">Every code block copies with one click</span>
+    <span class="chip">Free software, nothing to buy</span>
+    <span class="chip">Works on a school Chromebook</span>
+  </div>
+</header>
+
+<div class="tier" data-tier="1"><section id="showcase">
+<div class="taste fig">
+<div class="p3d">
+  <canvas id="pca3d" tabindex="0" role="img" aria-label="An interactive three-dimensional scatter plot. Each dot is one patient sample and there are three groups. In the starting view two of the groups overlap; dragging rotates the cloud and they separate."></canvas>
+  <div class="p3d-hint">drag to rotate &middot; arrow keys work too</div>
+  <button type="button" id="pca3d-reset" class="p3d-reset">reset view</button>
+</div>
+<div class="p3d-key">
+  <span><i class="k1"></i>healthy</span>
+  <span><i class="k2"></i>early disease</span>
+  <span><i class="k3"></i>late disease</span>
+</div>
+<p class="cap"><strong>Every dot is one patient</strong>, placed by about twenty thousand gene
+measurements squashed down to three numbers. <strong>Drag it.</strong> The two disease groups start
+sitting on top of one another and come apart as you turn the cloud &mdash; which is exactly why this
+one has to be three-dimensional, and why it has to move.</p>
+<p class="cap tiny">3D earns its place here because you are hunting for clusters in a cloud. On a bar
+chart or a pie chart it only distorts what you are trying to read, and Excel will happily let you make
+one. The calculation is a single line, <code>prcomp(genes)</code>; drawing it takes about ten more. This one is drawn for the page in JavaScript, not by R &mdash; JavaScript is the only language a browser runs, and R makes the same kind of interactive figure from one command.</p>
+</div>
+<div class="taste fig"><svg viewBox="0 0 812 336" role="img" aria-label="One figure combining a world map with four highlighted countries and four small line charts of GDP growth, each drawn in the same colour as its country on the map."><defs><clipPath id="mclip"><rect x="4" y="46" width="396" height="214" rx="6"/></clipPath></defs><text x="4" y="26" class="ftitle">Annual GDP growth, four economies, 2005&#8211;2024</text><text x="4" y="41" class="fsub">one map and four charts, drawn together as a single figure</text><g clip-path="url(#mclip)"><rect x="4" y="46" width="396" height="214" class="mbg"/><path class="mbase" d="M395.2 188.9 395.5 189.7 394.2 189.7 395.2 188.9Z M239.3 168.3 245.1 172.9 244.9 177.6 246.1 179.9 245.2 180.6 239.8 181.4 239.0 178.8 235.7 177.5 234.5 175.2 234.2 172.7 235.8 171.3 235.5 168.5 239.3 168.3Z M192.8 132.6 192.7 134.8 189.2 134.8 189.2 138.0 188.2 138.1 188.1 140.5 183.6 140.9 186.1 140.3 189.9 133.6 192.6 133.3 192.8 132.6Z M84.0 106.3 81.1 104.1 82.1 102.3 81.3 101.8 81.4 99.9 83.5 98.0 82.7 97.3 82.8 93.6 80.0 94.6 79.9 93.3 78.5 93.0 90.2 82.7 92.7 83.5 101.3 81.9 102.0 82.9 103.8 82.2 103.1 83.0 105.8 82.6 109.8 83.5 110.3 84.1 108.7 84.6 109.9 84.8 113.1 84.5 113.4 85.2 116.9 83.7 119.6 84.9 123.5 83.9 124.5 84.2 123.7 85.3 126.7 83.4 125.8 82.3 128.6 80.4 129.8 81.0 129.8 82.2 128.7 82.7 130.0 82.9 129.2 84.0 130.9 83.2 131.3 83.8 130.7 85.4 134.3 82.5 136.4 82.7 137.1 83.3 135.5 85.5 131.5 86.0 119.9 92.3 118.0 94.5 119.2 94.7 118.8 96.7 120.2 96.5 124.1 98.7 126.5 98.9 125.5 101.2 126.4 103.6 128.4 102.0 128.5 99.5 132.6 97.3 132.3 94.7 134.0 93.5 134.9 90.7 138.7 90.6 140.0 92.0 141.5 92.1 140.6 94.5 141.6 95.4 145.5 92.9 146.6 96.8 145.9 97.5 149.2 99.5 150.1 101.2 149.7 102.5 144.8 104.8 138.7 104.8 132.7 108.9 139.6 106.0 140.2 106.6 139.1 107.4 138.9 109.6 141.7 110.1 143.1 108.7 143.4 110.0 141.9 110.8 136.3 112.8 136.6 111.8 138.6 110.8 135.9 111.0 136.0 108.6 134.8 108.2 131.5 111.1 128.2 111.1 119.2 115.2 118.6 114.9 120.4 112.9 120.8 110.7 116.7 107.1 113.5 107.3 111.2 106.7 111.1 105.8 84.0 106.3ZM141.2 79.5 140.8 79.0 141.5 78.6 144.0 79.2 141.2 79.5ZM132.7 77.4 130.2 77.4 132.5 76.7 132.7 77.4ZM134.5 73.9 134.4 74.5 132.8 74.5 134.5 73.9ZM136.2 77.9 133.4 77.5 134.1 76.5 132.0 75.7 132.7 75.3 136.0 75.7 136.6 76.8 143.0 77.0 140.9 77.9 136.2 77.9ZM149.4 103.5 147.7 105.3 148.5 104.9 148.6 105.6 150.7 106.0 150.2 109.1 149.2 108.9 149.5 107.8 148.0 108.8 148.3 108.2 147.5 107.9 144.5 108.0 147.5 104.2 149.4 103.5ZM132.0 87.6 134.2 89.1 131.9 88.7 129.1 89.9 129.2 89.2 128.0 89.3 130.8 86.9 132.0 87.6ZM141.6 80.0 142.6 79.6 144.4 81.0 146.0 80.8 148.0 81.8 148.6 83.2 146.8 83.7 151.4 85.7 148.6 87.7 147.1 86.2 145.9 86.4 145.5 87.0 147.1 88.4 147.1 89.5 146.4 90.3 143.8 89.1 145.0 91.1 141.4 90.0 139.3 88.1 136.1 88.2 137.1 87.4 140.5 87.2 142.8 85.3 142.8 84.4 140.5 83.5 141.2 83.3 140.7 82.6 131.9 81.6 133.1 81.1 132.0 81.1 132.7 80.1 135.2 78.8 137.4 78.5 136.4 79.8 140.0 78.6 140.5 79.6 139.8 80.3 141.6 80.0ZM131.2 78.2 133.9 78.5 128.5 80.3 129.4 78.9 131.2 78.2ZM112.6 76.3 119.5 74.9 117.3 75.9 112.6 76.3ZM79.2 100.2 80.1 100.1 78.5 102.5 78.3 101.0 79.2 100.2ZM129.1 73.4 131.7 74.3 128.2 74.2 129.1 73.4ZM82.9 106.9 81.1 106.5 79.9 104.4 82.2 104.7 82.9 106.9ZM111.3 77.9 114.7 78.9 105.8 81.5 104.8 80.5 108.6 78.0 111.3 77.9ZM123.2 76.6 124.8 76.4 123.3 77.3 118.2 77.9 117.4 77.6 119.4 77.2 115.1 77.1 118.5 76.0 121.8 76.9 123.1 75.7 123.7 75.8 123.2 76.6ZM121.1 79.3 120.5 81.4 122.2 82.3 119.9 83.7 110.9 83.9 109.3 83.3 109.2 82.4 113.6 82.0 109.4 81.8 111.7 81.1 109.5 80.8 112.0 79.6 118.4 79.4 118.3 80.7 119.7 79.3 121.1 79.3ZM125.3 79.6 125.1 79.0 126.5 78.5 128.7 78.6 127.4 79.4 128.2 79.8 127.2 80.7 124.8 81.0 123.5 79.8 125.3 79.6ZM121.6 78.7 123.0 78.9 121.6 79.6 121.6 78.7ZM131.0 75.8 129.3 77.3 126.8 76.8 131.0 75.8ZM137.0 72.3 140.1 71.8 142.7 73.3 136.8 74.3 137.7 73.3 136.0 73.0 137.0 72.3ZM141.3 71.3 150.5 70.4 161.5 70.8 148.8 73.4 149.7 73.5 149.2 74.1 143.4 76.3 137.2 76.0 139.6 74.7 141.5 75.0 140.2 74.2 143.2 73.3 142.8 72.6 146.5 72.4 142.6 72.4 141.3 71.3ZM140.8 85.1 139.1 85.5 140.0 84.3 141.3 84.5 140.8 85.1ZM125.5 82.9 124.8 83.7 122.6 83.0 124.5 82.2 125.5 82.9ZM139.7 108.7 141.4 109.4 140.4 110.0 139.3 109.4 139.7 108.7Z M285.8 106.0 284.7 106.9 284.9 108.7 282.8 108.3 283.0 110.5 280.9 111.2 282.5 113.4 282.3 114.4 275.9 113.2 275.5 114.2 273.1 114.0 271.3 116.5 269.2 115.8 266.4 112.7 263.7 113.0 259.5 110.4 257.1 111.1 258.3 115.7 256.1 114.4 254.7 115.1 254.4 113.8 251.7 111.6 254.2 110.8 253.7 108.9 250.0 109.4 246.8 107.0 247.2 104.5 248.4 105.2 248.3 104.3 249.8 103.0 254.9 104.3 260.2 104.1 258.4 102.7 259.6 101.5 258.9 100.3 265.2 98.7 270.2 100.9 272.9 99.7 277.9 104.0 278.1 103.4 281.0 103.8 285.8 106.0Z M258.3 115.7 257.1 111.1 259.5 110.4 263.7 113.0 266.4 112.7 269.2 115.8 271.3 116.5 273.0 114.5 272.8 115.4 275.7 116.2 274.7 117.1 273.5 117.0 273.3 116.1 272.0 116.4 270.6 118.4 271.9 119.6 271.7 120.8 260.5 113.9 259.1 115.0 259.5 115.7 258.3 115.7Z M357.0 170.3 360.9 171.9 362.3 173.9 364.1 174.7 363.4 176.3 366.9 180.3 363.9 179.7 362.1 177.1 360.7 176.6 358.2 178.7 356.5 178.4 357.0 170.3ZM369.7 171.6 369.9 173.0 367.6 170.5 369.7 171.6ZM368.1 174.3 366.3 174.9 364.8 174.2 366.9 173.3 367.6 173.9 369.2 172.2 368.1 174.3Z M357.0 170.3 356.5 178.4 355.6 177.4 352.8 177.5 354.1 176.2 353.5 173.8 348.9 171.5 348.1 172.2 347.1 170.6 349.0 169.8 347.4 169.8 345.5 168.2 347.6 167.5 349.4 168.0 349.8 170.5 350.9 171.3 353.1 169.2 357.0 170.3ZM331.5 161.9 330.9 163.0 332.9 166.0 331.6 166.1 329.6 172.1 323.1 170.7 321.8 166.6 322.6 164.6 323.5 166.1 327.1 165.6 328.0 165.3 329.3 161.7 331.5 161.9ZM344.2 170.6 345.8 171.9 342.6 171.3 344.2 170.6ZM341.4 171.8 340.5 171.0 341.6 171.0 341.4 171.8ZM342.6 164.4 343.5 165.7 342.9 168.2 342.1 165.8 342.6 164.4ZM337.2 166.0 339.5 165.0 338.9 166.5 334.2 166.8 334.0 167.7 335.0 168.8 337.7 167.8 335.6 169.4 337.3 173.7 336.2 173.7 336.8 172.6 335.5 172.8 335.0 170.3 334.2 170.7 334.2 174.0 333.5 174.1 332.5 170.6 334.0 166.4 334.9 165.4 337.2 166.0ZM333.7 179.8 332.3 179.0 333.3 178.7 334.2 179.5 333.7 179.8ZM335.0 177.7 336.7 177.2 336.5 177.8 335.0 177.7ZM331.6 177.5 332.5 177.9 329.9 178.3 331.6 177.5ZM321.1 175.1 325.5 175.7 328.8 177.5 327.5 178.0 318.8 176.2 317.6 175.6 318.4 174.4 321.1 175.1ZM316.8 168.4 318.6 170.9 318.2 174.4 317.0 174.4 314.7 172.3 310.4 164.8 306.6 160.3 309.1 160.5 312.6 164.5 314.7 165.3 316.2 166.9 315.8 168.0 316.8 168.4Z M137.8 232.2 139.2 233.7 142.1 234.7 141.9 235.3 138.9 234.9 137.8 232.2ZM141.2 204.7 141.2 210.0 143.6 213.0 143.0 214.6 141.6 215.3 138.5 215.4 138.8 218.1 136.4 218.2 136.9 219.4 138.6 220.0 137.2 221.2 137.4 223.1 135.9 223.7 135.9 224.6 138.2 225.7 136.4 230.0 138.1 231.9 134.4 231.5 131.6 228.3 131.7 222.8 129.4 217.9 129.7 215.1 128.8 212.7 129.4 209.7 127.9 206.1 128.1 202.5 129.3 200.6 128.7 197.6 129.8 197.0 130.6 194.3 132.8 195.5 133.1 194.5 134.4 194.5 136.7 196.8 140.2 198.4 139.6 200.9 142.8 201.2 144.1 198.9 144.9 200.6 141.2 204.7Z M137.8 232.2 138.9 234.9 140.4 234.9 139.7 235.8 136.8 235.1 132.3 232.5 136.2 233.9 136.4 232.6 137.8 232.2ZM126.5 189.0 129.1 195.6 130.0 195.7 129.8 197.0 128.7 197.6 129.3 200.6 128.1 202.5 127.9 206.1 129.4 209.7 128.8 212.7 129.7 215.1 129.8 219.6 131.7 222.8 131.6 228.3 134.4 231.5 137.7 231.8 135.9 232.5 136.2 233.7 131.7 231.8 129.2 227.5 129.8 225.4 128.2 225.0 128.3 221.9 129.6 222.4 129.3 219.8 128.5 219.5 128.7 221.0 128.0 220.8 126.4 213.3 127.2 207.4 126.3 203.0 126.5 193.7 125.8 189.9 126.5 189.0Z M234.2 172.7 235.7 177.5 233.8 177.5 233.2 178.5 233.0 181.8 234.4 182.2 234.4 183.6 231.7 181.5 226.2 180.9 225.8 176.2 224.0 175.7 222.8 177.0 221.2 177.1 219.9 174.4 215.4 174.3 216.9 172.7 218.0 173.3 219.6 171.5 221.4 167.6 222.4 161.8 223.4 160.8 226.6 162.1 227.1 161.2 230.2 160.5 232.1 160.6 233.2 161.7 234.6 161.3 236.3 164.3 234.9 166.3 234.2 172.7Z M247.7 169.2 247.0 163.6 248.3 161.8 251.4 160.8 255.6 155.3 255.5 152.9 257.8 152.1 257.4 155.6 255.4 160.4 247.7 169.2Z M245.1 172.9 239.3 168.3 240.5 164.7 239.4 161.8 240.8 160.2 243.9 162.6 248.0 162.2 247.0 163.6 247.7 169.2 245.1 172.9Z M228.9 156.8 227.7 155.9 227.8 154.5 226.0 151.4 227.0 147.5 228.0 147.6 227.8 142.2 229.0 142.2 228.9 139.7 241.7 139.7 242.6 143.9 243.6 144.7 242.0 146.0 241.6 150.2 239.5 153.8 239.2 156.3 237.8 151.8 236.3 154.9 234.8 154.3 233.7 155.4 231.3 155.3 229.4 154.3 228.2 156.3 228.9 156.8Z M227.8 142.7 228.0 147.6 227.0 147.5 226.0 151.4 227.0 153.2 221.7 157.2 218.8 157.8 217.3 155.2 218.9 154.6 217.9 150.5 216.8 149.2 218.6 146.4 219.2 141.7 218.0 138.6 219.0 137.9 227.8 142.7Z M124.5 142.5 124.3 144.6 121.3 144.2 123.7 143.8 122.9 142.3 124.5 142.5Z M124.3 144.6 124.6 142.3 128.0 143.9 125.5 144.1 124.6 145.2 124.3 144.6Z M250.0 109.4 248.1 111.6 250.8 115.1 250.2 115.9 247.5 114.2 241.7 113.1 238.1 110.8 239.4 109.6 238.8 109.1 240.1 108.6 239.1 108.0 240.5 107.6 240.4 105.5 235.6 104.4 233.7 102.3 231.9 102.6 231.2 101.4 232.4 101.1 230.2 98.5 227.6 97.7 226.5 96.2 226.4 94.8 227.6 93.3 226.5 92.7 228.9 90.1 227.5 89.3 227.0 86.8 225.8 85.6 226.3 84.8 224.8 83.4 227.4 82.5 235.4 85.1 235.7 85.8 233.7 86.6 229.2 86.0 230.8 86.7 231.4 88.4 233.3 89.0 233.0 87.6 235.2 88.2 235.9 88.0 235.0 87.2 236.6 86.1 238.3 86.6 236.9 83.9 239.3 84.2 240.0 84.8 239.0 85.0 239.2 85.6 240.0 85.9 245.0 83.6 245.6 83.6 245.1 84.3 249.1 83.6 250.3 84.2 250.9 83.5 249.9 82.5 257.3 84.4 257.6 83.8 255.2 83.0 254.0 81.3 255.2 79.3 257.9 80.1 257.8 81.0 261.3 84.1 260.7 86.3 261.8 86.5 262.8 84.8 258.7 80.9 259.6 80.2 258.9 79.5 261.5 81.2 260.6 80.5 261.6 80.1 265.0 80.6 262.7 78.7 267.2 78.4 266.2 77.9 266.4 77.2 275.0 76.0 274.9 75.2 276.1 74.9 285.4 76.6 285.9 77.0 283.9 78.2 295.7 79.4 294.8 78.6 297.8 78.8 304.7 81.6 304.1 80.5 310.5 80.9 308.6 79.9 309.0 79.5 316.9 80.2 321.6 81.5 326.3 81.5 330.0 83.0 335.3 82.8 338.0 83.8 338.5 83.4 336.6 82.3 344.1 83.0 352.5 87.7 350.9 88.1 355.9 90.7 354.0 90.5 352.1 91.5 351.8 93.4 349.5 92.7 348.4 93.5 345.8 93.5 346.6 95.3 348.5 96.1 351.1 99.3 350.1 99.9 351.1 101.2 350.0 101.5 350.8 102.7 350.5 103.8 343.0 97.1 342.5 95.8 343.6 95.6 344.2 92.0 342.9 90.5 342.0 90.5 342.6 91.5 341.9 92.7 339.5 91.3 337.7 91.7 337.8 93.6 339.3 94.3 336.4 94.7 334.0 93.7 328.0 94.4 326.4 99.4 330.1 100.6 331.3 100.1 333.8 101.4 337.1 106.9 336.2 113.1 335.3 113.8 333.7 113.2 333.0 114.6 331.2 111.2 333.1 111.0 332.2 106.9 328.9 107.7 324.1 105.3 319.7 101.7 316.9 100.9 314.3 101.8 315.6 102.7 315.8 104.9 314.9 105.6 311.0 104.8 308.2 106.1 306.0 105.9 294.9 102.6 295.0 105.4 289.5 104.1 285.8 106.0 281.0 103.8 278.1 103.4 277.9 104.0 272.9 99.7 270.2 100.9 265.2 98.7 258.9 100.3 259.6 101.5 258.4 102.7 260.2 104.1 254.9 104.3 249.8 103.0 248.3 104.3 248.4 105.2 247.2 104.5 246.8 107.0 250.0 109.4ZM265.1 72.0 268.1 72.2 271.6 73.8 266.4 73.3 264.0 72.5 265.1 72.0ZM273.1 73.4 275.8 74.3 272.3 74.7 272.1 73.4 273.1 73.4ZM303.0 76.3 308.5 76.8 309.1 77.5 305.4 77.7 303.0 77.1 302.3 76.5 303.0 76.3ZM223.0 99.9 220.1 99.8 221.5 98.9 223.0 99.9ZM242.3 78.6 243.6 77.7 243.1 77.3 246.4 76.2 251.8 75.9 245.7 78.0 244.5 80.0 247.1 81.6 242.0 80.9 241.6 80.3 243.1 78.7 242.3 78.6ZM334.6 100.6 341.0 106.3 339.3 105.9 340.0 107.7 342.5 109.7 341.2 109.0 341.2 110.0 340.3 108.9 333.9 101.1 334.3 100.6 333.4 100.0 334.6 100.6ZM59.3 85.4 58.4 86.3 59.4 85.5 61.4 85.7 61.5 86.7 56.4 88.5 54.8 87.8 55.3 87.3 53.6 87.3 54.5 86.5 51.5 87.7 58.0 83.5 59.3 85.4ZM62.3 81.5 61.2 81.5 62.4 80.8 63.9 81.1 62.3 81.5ZM234.8 109.9 237.8 111.0 235.5 111.9 233.9 110.7 234.8 109.9Z M119.2 133.4 119.9 134.0 119.6 134.8 119.2 133.4Z M144.4 231.3 146.6 230.4 147.5 230.9 146.2 231.7 144.4 231.3Z M212.4 73.0 217.0 73.7 213.5 75.7 209.2 73.1 212.4 73.0ZM226.7 82.8 224.8 83.4 225.0 82.6 223.9 82.2 221.9 83.8 218.9 83.0 218.0 84.1 216.5 83.9 213.5 88.8 212.6 88.8 212.8 93.2 211.8 94.6 211.1 93.9 209.5 95.3 207.0 94.9 206.3 91.1 210.8 88.3 214.0 84.7 217.2 82.6 223.9 81.2 226.6 81.9 225.7 82.2 226.7 82.8ZM220.7 72.7 217.9 73.3 213.8 72.5 220.7 72.7ZM219.5 74.7 218.0 75.1 216.6 74.3 219.5 74.7Z M171.4 70.8 184.5 70.1 188.4 70.7 181.2 71.2 193.8 71.8 188.3 72.6 189.9 72.6 188.3 73.9 188.7 75.5 186.3 75.8 187.6 76.3 186.7 77.2 187.5 78.0 184.2 79.0 184.9 80.2 183.0 80.0 184.9 81.7 183.5 81.9 182.2 80.9 181.2 82.1 184.4 82.2 168.9 87.2 165.4 90.3 163.9 93.2 160.0 92.3 157.7 86.5 158.0 85.4 161.8 82.4 159.4 83.1 158.6 82.8 158.9 82.1 161.7 81.8 158.8 80.7 160.2 79.8 159.0 76.9 152.1 76.4 150.8 75.5 154.4 75.2 150.3 74.5 156.6 73.3 157.2 73.0 155.6 72.7 160.4 71.4 168.9 70.9 172.4 71.5 171.4 70.8Z M268.4 227.4 269.7 228.0 269.2 228.7 267.7 228.8 268.4 227.4Z M338.9 178.1 341.6 177.5 339.0 178.8 338.9 178.1Z M219.3 202.7 219.9 202.0 221.5 203.2 223.1 202.5 223.3 197.9 224.2 200.5 225.0 200.4 226.9 198.5 229.4 198.8 233.7 194.6 235.6 194.8 236.0 199.3 235.2 199.1 234.7 200.4 235.3 201.1 237.0 200.4 236.4 202.3 231.5 207.9 228.8 209.3 221.6 210.0 221.1 206.5 219.3 202.7ZM232.7 203.1 231.7 203.0 230.5 204.3 231.2 205.2 232.5 204.5 232.7 203.1Z M232.7 203.1 232.5 204.5 231.2 205.2 230.5 204.3 231.7 203.0 232.7 203.1Z M79.4 126.6 82.0 126.3 85.3 128.1 90.2 127.5 92.0 130.6 92.8 131.0 94.6 130.0 96.4 134.2 98.3 134.9 96.7 139.1 98.2 143.6 99.7 144.5 103.1 143.6 104.6 140.9 108.2 140.2 106.8 144.3 103.3 144.9 102.8 145.6 103.7 147.1 102.3 147.1 101.5 149.0 99.9 147.2 97.0 147.6 89.9 144.3 88.0 142.2 88.0 138.7 83.2 131.0 83.0 128.3 81.6 127.5 81.0 129.5 83.1 133.9 83.4 136.8 84.5 138.0 83.7 138.7 81.9 136.3 82.1 134.7 79.8 132.6 81.0 131.5 79.9 130.3 79.4 126.6Z M141.2 204.7 145.6 207.0 146.4 207.8 146.1 209.9 143.7 210.5 141.2 209.3 141.2 204.7Z M125.9 180.7 130.4 179.2 130.5 181.5 136.0 184.2 136.6 187.3 138.7 187.4 139.7 189.7 139.5 191.9 138.1 191.2 135.2 191.5 134.6 194.8 133.1 194.5 132.8 195.5 130.6 194.3 129.1 195.6 126.5 189.0 127.0 182.7 125.9 180.7Z M125.2 172.4 121.9 173.6 120.9 176.4 121.8 178.9 123.0 179.6 124.8 178.9 124.8 180.8 125.9 180.7 127.0 182.7 126.5 185.7 127.1 187.6 125.8 189.9 119.2 185.3 114.5 176.0 112.8 174.7 112.6 173.0 113.8 171.3 113.6 172.6 115.0 173.3 115.6 172.7 116.5 170.8 118.9 169.0 119.4 167.1 121.7 170.0 125.0 170.5 124.3 171.7 125.2 172.4Z M128.5 165.5 127.8 164.5 125.2 164.9 125.9 165.8 125.0 166.4 125.7 168.5 125.2 172.4 124.3 171.7 125.0 170.5 121.7 170.0 119.4 167.1 115.3 165.4 117.3 162.3 116.6 158.1 117.1 156.5 119.1 155.3 120.1 153.3 123.6 151.6 124.3 152.0 121.7 155.7 123.1 158.4 128.1 159.5 127.5 163.6 128.5 165.5Z M117.2 156.3 116.6 158.1 115.3 155.9 113.9 156.7 113.8 158.0 111.1 156.8 111.6 155.2 112.8 156.1 115.5 155.2 117.2 156.3Z M111.6 155.2 111.1 156.8 109.0 154.5 108.8 155.2 108.2 154.7 108.0 153.5 110.5 153.5 111.6 155.2Z M110.5 153.5 108.3 153.3 106.3 151.0 109.5 148.7 111.5 148.4 110.5 153.5Z M111.5 148.4 109.5 148.7 106.7 150.9 104.6 149.1 106.4 147.3 109.6 147.2 111.5 148.4Z M104.6 149.1 106.3 149.9 106.1 150.7 103.8 150.0 104.6 149.1Z M101.5 149.0 102.3 147.1 103.7 147.1 102.8 145.6 103.3 144.9 105.4 144.9 105.0 147.3 106.0 147.5 104.6 149.1 103.8 150.0 101.5 149.0Z M105.4 144.9 106.6 144.2 106.0 146.5 105.0 147.3 105.4 144.9Z M135.3 160.6 132.7 162.4 130.8 162.0 131.4 164.0 132.3 164.3 129.1 166.2 127.5 163.6 128.1 159.5 123.1 158.4 121.7 155.7 122.2 154.1 124.0 152.4 123.1 154.8 123.9 155.7 123.9 153.4 125.6 151.9 127.4 153.9 131.0 154.5 134.3 153.7 133.3 154.1 133.7 154.7 136.5 156.7 134.6 159.7 135.3 160.6Z M139.8 164.7 137.6 165.5 136.4 164.9 136.6 162.1 134.6 159.7 136.5 156.7 139.3 159.6 138.2 162.0 139.8 164.7Z M142.1 164.2 140.5 163.9 139.8 164.7 138.7 162.9 138.4 161.1 139.3 159.6 142.8 159.9 142.1 164.2Z M145.2 161.9 143.8 164.4 142.1 164.2 142.8 159.9 145.2 161.9ZM207.9 105.7 209.8 106.2 207.9 109.0 209.4 112.7 203.8 114.4 200.5 113.6 200.8 109.9 197.7 107.5 197.6 106.7 200.4 106.7 200.2 105.3 201.1 105.8 204.4 103.7 207.9 105.7ZM210.7 114.0 211.4 113.6 211.3 115.6 210.7 114.0Z M119.1 167.3 118.9 169.0 116.5 170.8 115.6 172.7 115.0 173.3 113.6 172.6 114.3 170.4 113.0 169.9 113.0 168.4 113.9 166.1 115.3 165.4 119.1 167.3Z M130.2 144.0 130.6 144.7 129.2 144.7 130.2 144.0Z M118.0 144.1 119.4 144.8 117.7 144.8 117.1 144.4 118.0 144.1Z M113.6 138.2 117.8 139.0 121.9 141.8 118.0 142.4 118.8 141.7 117.2 140.2 114.0 139.4 114.1 138.9 110.5 139.8 113.6 138.2Z M235.6 194.8 232.2 193.8 229.4 189.2 231.3 189.4 234.9 186.4 237.7 187.9 237.3 192.4 235.6 194.8Z M233.7 194.6 229.4 198.8 226.9 198.5 224.2 200.5 223.3 197.9 223.4 194.3 224.5 194.2 224.7 189.8 229.4 189.2 232.2 193.8 233.7 194.6Z M223.3 197.9 223.1 202.5 221.5 203.2 219.9 202.0 219.3 202.7 218.2 200.8 217.3 194.6 214.7 188.6 229.2 189.0 227.5 189.8 224.7 189.8 224.5 194.2 223.4 194.3 223.3 197.9Z M183.8 150.1 182.8 148.7 184.5 146.6 186.2 146.4 188.7 148.9 189.4 151.6 183.8 151.7 183.6 150.7 186.9 150.3 183.8 150.1Z M189.4 151.6 188.7 148.9 189.3 147.9 196.0 147.8 195.1 136.0 196.7 136.0 205.4 142.6 205.4 143.3 206.6 143.2 206.0 147.7 200.8 148.4 197.6 150.3 196.1 154.2 193.2 154.4 192.0 151.7 190.9 152.3 189.4 151.6Z M183.6 140.9 188.1 140.5 188.2 138.1 189.2 138.0 189.2 134.8 192.7 134.8 192.8 133.0 196.7 136.0 195.1 136.0 196.0 147.8 189.3 147.9 188.7 148.9 186.2 146.4 184.1 147.0 184.4 142.1 183.6 140.9Z M205.0 159.3 204.0 159.4 203.8 155.7 202.8 154.0 205.1 151.8 206.2 153.7 205.0 156.5 205.0 159.3Z M218.0 138.6 219.2 141.7 218.6 146.4 216.8 149.2 217.9 150.5 217.5 151.5 216.3 150.1 211.8 151.1 207.9 149.8 206.5 150.2 205.9 152.6 203.1 151.1 202.4 148.5 206.0 147.7 206.6 143.2 214.9 137.8 217.2 139.1 218.0 138.6Z M205.0 159.3 206.8 150.0 211.8 151.1 216.3 150.1 217.9 152.0 214.9 158.4 212.1 159.1 211.3 161.1 208.5 161.8 206.7 159.3 205.0 159.3Z M217.8 151.1 218.9 154.6 217.3 155.2 218.9 157.5 217.9 161.2 219.4 163.3 219.5 164.9 212.6 164.2 212.8 163.2 211.3 161.5 211.6 160.3 213.1 158.3 214.9 158.4 217.8 151.1Z M203.0 153.4 204.0 159.4 203.2 159.7 201.9 153.7 203.0 153.4Z M202.0 153.4 203.2 159.7 199.8 161.2 198.9 160.9 198.4 159.3 199.2 156.8 198.8 153.4 202.0 153.4Z M193.2 154.4 195.2 154.0 198.9 155.1 198.9 160.9 193.5 161.6 193.7 160.0 192.6 159.0 193.2 154.4Z M187.0 151.4 190.9 152.3 192.0 151.7 193.2 154.4 192.9 157.5 191.9 158.0 191.3 156.4 190.5 156.7 189.8 154.6 187.5 156.0 185.5 153.3 187.0 152.4 187.0 151.4Z M183.8 151.7 187.0 151.4 187.0 152.4 185.5 153.3 183.8 151.7Z M192.7 157.5 193.5 161.6 189.4 158.6 190.8 156.6 191.9 158.0 192.7 157.5Z M187.5 156.0 189.8 154.6 190.8 156.6 189.4 158.6 187.8 157.4 187.5 156.0Z M196.1 154.2 197.3 150.6 200.8 148.4 202.4 148.5 203.1 151.1 204.4 151.4 203.0 153.4 198.8 153.4 198.9 155.1 196.1 154.2Z M232.1 160.6 228.8 160.7 226.6 162.1 223.4 160.8 222.3 162.7 220.8 162.4 219.6 164.3 217.9 160.3 218.8 157.8 221.7 157.2 227.0 153.2 227.7 155.9 232.1 160.6Z M222.3 162.7 221.4 167.6 219.6 171.5 218.0 173.3 215.9 172.6 215.1 173.3 214.2 172.0 215.0 171.3 214.6 170.5 215.8 169.5 217.4 170.2 217.9 168.7 217.7 165.6 216.6 165.4 216.4 164.3 219.5 164.9 220.8 162.4 222.3 162.7Z M214.4 164.3 216.2 164.2 216.6 165.4 217.7 165.6 217.9 168.7 217.4 170.2 215.8 169.5 214.6 170.5 215.0 171.3 214.2 172.0 211.7 168.5 212.4 165.8 214.4 165.8 214.4 164.3Z M212.6 164.2 214.4 164.3 214.4 165.8 212.4 165.8 212.6 164.2Z M235.7 177.5 238.4 179.1 237.6 184.2 238.2 184.5 234.9 185.5 234.9 186.4 231.3 189.4 227.2 188.9 225.8 187.1 225.9 183.1 228.2 183.2 228.2 180.7 230.1 181.8 231.7 181.5 234.4 183.6 234.4 182.2 233.0 181.8 233.2 178.5 233.8 177.5 235.7 177.5Z M237.9 178.6 239.5 179.7 239.7 184.0 240.9 185.3 240.0 188.0 239.5 185.3 237.6 184.2 238.6 180.2 237.9 178.6Z M239.8 181.4 243.0 181.5 246.1 179.9 246.4 185.4 244.8 187.9 239.6 191.7 240.0 197.1 237.3 198.7 237.0 200.4 236.2 200.4 235.6 194.8 237.3 192.4 237.7 187.9 235.0 186.9 234.9 185.5 238.2 184.5 239.5 185.3 240.0 188.0 240.9 185.3 239.7 184.0 239.8 181.4Z M236.2 200.4 235.3 201.1 234.7 200.4 235.2 199.1 236.0 199.3 236.2 200.4Z M216.3 173.0 215.4 174.3 215.1 173.3 216.3 173.0ZM215.5 174.7 219.9 174.4 221.2 177.1 222.8 177.0 224.0 175.7 225.8 176.2 226.2 180.9 228.3 181.1 228.2 183.2 225.9 183.1 225.8 187.1 227.2 188.9 225.2 189.4 216.6 188.2 214.7 188.6 217.0 181.1 215.5 174.7Z M235.5 170.1 235.8 171.3 234.2 172.7 233.9 170.6 235.5 170.1Z M239.4 126.3 238.7 127.4 238.9 130.3 238.0 128.2 238.7 125.9 239.4 125.6 239.4 126.3Z M239.4 125.6 238.7 125.9 238.9 124.9 239.9 124.0 239.4 125.6Z M256.1 182.6 256.8 186.6 256.0 186.6 252.4 198.1 250.5 199.0 249.1 198.2 248.6 195.4 250.1 191.3 249.7 188.8 250.3 187.3 252.4 186.7 255.7 182.1 256.1 182.6Z M183.8 150.1 186.9 150.3 183.6 150.7 183.8 150.1Z M212.0 129.3 209.8 124.6 210.7 121.1 211.8 120.6 212.5 121.4 213.3 120.9 212.6 124.3 214.0 125.8 212.0 129.3Z M192.8 133.0 192.8 131.2 200.6 126.9 199.8 123.3 200.8 122.6 203.5 121.5 210.7 121.1 209.8 124.6 212.4 130.4 211.9 134.6 213.0 136.7 214.9 137.8 208.1 142.7 205.4 143.3 205.4 142.6 192.8 133.0Z M239.2 126.7 240.6 126.8 242.5 125.5 243.1 127.0 240.9 127.8 242.1 129.1 240.2 130.7 238.9 130.3 239.2 126.7Z M257.3 136.9 259.9 137.0 261.8 134.6 262.4 136.0 261.2 139.1 257.9 138.4 257.3 136.9Z M256.4 136.2 256.7 134.6 257.2 135.7 256.4 136.2Z M252.7 129.7 253.3 131.5 251.3 130.8 252.7 129.7Z M243.1 127.0 242.5 125.5 244.6 124.2 244.6 121.8 245.9 120.5 248.0 120.8 249.6 122.7 249.3 124.8 251.5 126.6 253.3 129.8 249.3 130.7 243.1 127.0Z M261.3 138.8 262.4 136.0 266.3 139.3 264.4 141.9 264.4 143.5 261.5 146.0 259.7 146.3 258.3 143.4 261.4 142.2 261.9 139.7 261.3 138.8Z M314.1 151.9 314.2 149.4 317.6 149.8 318.0 148.9 319.4 150.2 319.4 151.7 317.7 152.7 318.2 153.4 315.2 153.8 314.1 151.9Z M316.7 149.3 314.2 149.4 314.1 151.9 311.2 150.4 310.7 155.6 314.1 159.3 313.1 160.0 309.6 156.7 310.8 152.3 308.9 148.2 309.5 146.9 307.5 144.1 308.2 142.5 310.1 141.7 311.5 142.8 311.6 145.3 313.8 144.3 315.6 145.4 316.9 147.7 316.7 149.3Z M319.0 149.4 316.7 149.3 316.9 147.7 314.6 144.4 311.6 145.3 311.5 142.8 310.1 141.7 311.0 140.4 311.7 140.7 311.3 139.3 313.3 141.2 314.7 141.2 315.3 142.3 314.4 143.1 318.7 147.3 319.0 149.4Z M310.1 141.7 308.2 142.5 307.5 144.1 309.5 146.9 308.9 148.2 310.8 152.3 309.9 154.7 308.1 147.0 307.5 146.0 305.7 147.5 304.4 147.1 304.2 144.4 301.5 140.3 302.2 139.3 302.1 137.1 302.9 137.4 303.3 136.3 303.4 134.0 305.4 133.3 305.9 131.8 307.3 134.8 306.7 137.3 307.8 137.1 308.8 139.5 310.9 139.9 310.1 141.7Z M316.2 154.0 318.2 153.4 317.7 152.7 319.4 151.7 319.4 150.2 318.7 147.3 314.4 143.1 315.3 142.3 314.7 141.2 313.3 141.2 311.9 139.1 315.1 138.0 318.4 140.2 316.3 143.3 320.5 148.1 321.3 150.4 321.4 152.5 317.2 156.4 316.2 154.0Z M332.7 114.3 332.9 116.2 331.4 117.6 332.9 119.3 330.4 120.2 329.3 117.8 328.0 117.4 329.3 115.0 330.9 115.5 330.4 114.8 331.6 113.6 332.7 114.3Z M331.2 120.1 332.9 119.0 335.2 121.3 335.8 123.4 333.5 124.3 331.8 121.3 332.4 121.1 331.2 120.1Z M286.2 105.9 289.5 104.1 295.0 105.4 294.9 102.6 306.0 105.9 308.2 106.1 311.0 104.8 313.5 105.2 314.1 107.8 316.1 107.4 318.7 109.1 316.5 109.1 314.0 111.4 312.2 111.0 313.0 112.7 312.2 113.8 307.5 115.3 302.7 114.0 298.2 113.9 296.4 112.1 291.5 110.8 290.6 108.8 286.2 105.9Z M301.7 139.6 301.7 141.3 300.3 138.7 299.3 138.7 299.2 139.9 297.8 139.6 296.4 136.6 297.1 135.6 296.4 134.1 298.2 135.6 300.9 136.0 299.8 137.8 300.5 138.5 300.9 137.7 301.7 139.6Z M299.4 132.5 300.0 133.7 296.5 133.1 297.5 131.8 299.4 132.5Z M295.6 132.4 295.9 134.2 292.8 133.8 286.8 131.2 287.0 130.1 288.0 129.2 293.1 132.0 295.6 132.4Z M282.5 122.9 281.8 123.9 278.7 124.3 280.8 126.9 278.2 132.3 277.0 132.2 276.0 133.5 278.1 136.7 275.8 136.7 275.1 137.6 273.0 135.4 267.8 135.8 268.0 134.4 269.4 133.8 266.3 129.9 268.2 130.6 272.1 129.9 272.4 128.1 274.7 127.4 275.4 125.5 274.8 124.7 275.8 124.8 276.2 123.3 276.0 121.6 279.2 120.8 282.5 122.9Z M270.2 120.6 273.1 120.8 274.3 119.2 275.9 121.3 277.1 120.4 279.2 120.8 275.5 122.2 276.2 123.3 275.8 124.8 274.8 124.7 275.4 125.5 274.7 127.4 272.4 128.1 272.1 129.9 268.2 130.6 266.3 129.9 267.1 128.8 265.2 126.0 265.3 122.7 267.2 123.0 268.5 121.9 268.5 120.9 270.2 120.6Z M271.7 120.8 271.9 119.6 270.8 117.8 273.3 116.1 273.9 117.0 272.5 117.2 272.6 117.9 276.9 118.0 278.9 120.5 277.1 120.4 275.9 121.3 274.3 119.2 273.1 120.8 271.7 120.8Z M273.0 114.5 273.7 113.8 275.5 114.2 275.9 113.2 282.3 114.4 279.4 116.8 275.0 118.2 272.6 117.9 272.5 117.2 274.7 117.1 275.7 116.2 272.8 115.4 273.0 114.5Z M254.7 115.1 256.1 114.4 257.8 115.7 259.5 115.7 259.1 115.0 260.5 113.9 270.2 120.6 269.4 120.2 268.5 121.9 266.5 123.2 260.6 119.7 257.4 120.8 256.9 118.6 255.4 117.2 255.4 116.2 257.2 116.1 255.8 114.7 255.2 115.9 254.7 115.1Z M253.3 129.8 251.5 126.6 249.3 124.8 249.6 122.7 247.3 119.8 246.8 118.0 247.5 117.6 249.0 118.8 250.8 117.8 252.4 120.3 255.8 121.4 260.6 119.7 265.0 121.6 265.2 126.0 267.1 128.8 266.3 129.9 269.4 133.8 268.0 134.4 267.8 135.8 263.3 135.0 262.7 133.5 259.0 133.7 256.7 132.4 254.9 129.5 253.3 129.8Z M239.4 126.3 240.1 124.5 239.2 123.0 239.8 121.2 245.5 120.7 244.6 121.8 244.6 124.2 240.6 126.8 239.4 126.3Z M249.4 118.8 246.2 117.0 245.9 115.9 248.0 116.3 249.4 118.8Z M211.8 94.6 213.0 91.9 212.2 89.8 215.6 84.5 218.5 83.3 221.0 84.6 221.8 86.6 220.4 86.9 220.0 88.4 217.3 90.2 216.8 91.8 218.5 93.2 217.0 94.8 216.4 97.8 213.9 98.7 211.8 94.6Z M227.6 97.7 230.2 98.5 232.4 101.1 231.2 101.4 231.9 102.6 230.9 103.5 224.2 103.2 223.8 100.4 225.6 100.0 226.2 98.4 227.6 97.7Z M231.9 102.6 233.7 102.3 235.6 104.4 240.4 105.5 240.5 107.6 236.2 109.6 236.4 110.2 232.0 109.2 231.1 110.8 229.7 110.5 230.2 109.4 231.3 109.4 229.7 107.3 224.0 107.6 223.3 107.0 224.8 104.5 224.2 103.2 230.9 103.5 231.9 102.6Z M223.8 100.4 224.8 104.2 223.9 106.2 217.4 104.6 215.1 101.5 215.1 100.6 218.2 99.3 223.8 100.4Z M218.4 107.3 217.6 109.1 216.3 109.4 211.2 108.6 214.6 108.1 215.1 106.4 217.9 106.5 218.4 107.3Z M223.3 107.0 224.0 107.6 222.6 109.5 220.1 110.2 217.8 108.9 218.4 107.3 223.3 107.0Z M227.7 107.2 229.7 107.3 231.3 109.4 230.2 109.4 229.7 110.5 229.4 108.9 227.7 107.2Z M229.7 110.5 231.1 110.8 230.4 112.7 224.8 112.6 221.8 109.8 224.4 107.4 227.7 107.2 229.4 108.9 229.7 110.5Z M226.2 98.4 225.6 100.0 223.8 100.4 221.2 97.9 224.6 97.5 226.2 98.4Z M226.5 96.2 227.6 97.7 226.2 98.4 224.6 97.5 221.2 97.9 222.2 95.9 223.0 96.8 224.5 95.7 226.5 96.2Z M226.7 93.9 226.5 96.2 223.8 95.9 222.7 94.2 226.7 93.9Z M215.1 100.6 216.2 103.7 213.7 104.7 215.1 106.4 214.6 108.1 209.2 107.9 209.8 106.2 208.4 106.0 207.8 104.9 208.6 100.7 209.5 100.9 209.8 99.1 211.1 99.1 212.1 100.3 213.5 99.7 215.1 100.6Z M224.4 112.1 230.4 112.7 230.1 114.8 225.1 115.6 224.4 112.1Z M225.1 115.6 228.7 115.4 228.3 116.3 226.0 116.4 226.7 117.1 224.9 117.0 226.6 119.5 226.6 120.2 225.7 119.9 226.0 120.5 225.4 120.6 225.9 121.7 224.3 121.2 222.5 117.8 223.2 116.2 225.1 115.6Z M248.0 120.8 239.8 121.2 239.3 122.5 239.2 121.4 237.7 121.3 237.1 122.0 233.5 121.4 232.6 122.1 230.5 121.4 228.6 118.0 229.6 116.8 231.1 116.7 231.4 115.8 233.4 115.9 235.6 114.8 240.7 116.1 244.8 115.3 247.5 117.6 246.8 118.0 248.0 120.8ZM228.2 115.0 230.1 114.8 231.2 115.7 228.7 117.1 228.2 115.0Z M223.2 116.2 222.5 117.8 221.6 117.0 221.7 114.0 223.2 116.2Z M218.2 109.3 221.1 110.8 217.5 111.4 220.4 114.2 217.9 113.0 216.7 111.0 215.5 111.0 218.2 109.3Z M211.3 108.1 212.2 108.8 211.7 109.5 209.1 110.2 207.9 109.6 208.5 108.0 211.3 108.1Z M207.8 104.1 207.4 105.6 204.4 103.7 206.7 103.3 207.8 104.1Z M208.4 100.9 207.8 104.1 205.1 103.5 206.4 101.4 208.4 100.9Z M192.9 115.0 193.7 114.5 195.6 115.6 193.9 121.2 192.8 121.2 192.3 118.9 192.9 115.0Z M194.3 120.9 194.4 117.7 195.6 115.6 193.7 114.5 192.9 115.0 192.6 113.6 194.1 112.7 205.0 114.2 204.1 115.8 202.8 116.0 201.7 118.1 202.1 118.9 199.8 121.4 197.5 121.4 196.4 122.3 194.3 120.9Z M196.3 100.4 195.6 102.4 192.6 102.9 193.4 101.6 193.0 100.4 195.1 98.9 195.0 100.2 196.3 100.4Z M380.7 193.3 381.8 194.7 380.8 194.6 379.2 192.1 380.7 193.3Z M379.4 180.1 378.9 180.5 378.6 179.8 379.4 180.1Z M381.3 216.9 379.2 218.5 377.8 218.4 379.2 217.4 378.6 216.3 381.2 213.6 381.8 210.0 382.6 211.0 382.0 213.4 382.6 212.6 382.9 214.2 384.9 214.0 381.3 216.9ZM370.6 221.2 376.7 217.5 376.3 218.5 377.5 218.0 373.7 221.6 371.7 222.1 369.2 224.1 367.2 225.0 365.3 224.1 370.6 221.2Z M351.1 217.9 349.3 220.8 347.2 221.2 348.2 217.7 351.1 217.9ZM334.1 207.2 330.8 209.3 326.8 209.4 324.4 210.7 321.6 209.7 323.3 207.2 322.9 199.6 323.2 199.0 323.8 199.8 323.5 197.4 324.9 194.2 324.8 195.1 327.9 192.9 332.6 191.6 335.7 187.5 336.4 188.3 336.2 187.7 339.0 184.8 340.6 184.3 343.2 185.7 344.6 182.7 346.8 182.2 346.1 181.1 346.7 180.9 349.8 182.3 351.1 181.8 351.6 182.5 349.6 185.8 354.0 189.1 356.3 185.8 357.9 180.4 358.8 185.2 359.6 184.7 360.3 185.7 360.4 190.7 362.7 192.5 363.0 194.9 364.1 195.0 364.0 196.3 365.5 198.5 364.5 203.2 361.5 207.6 355.9 213.7 351.0 215.7 349.9 214.9 350.4 214.3 348.4 215.4 345.9 214.4 346.0 212.1 344.8 211.4 345.6 209.9 343.7 211.0 346.0 208.0 343.1 210.5 342.5 207.7 339.9 206.3 334.1 207.2Z M291.7 157.7 291.6 159.0 290.2 159.6 289.4 156.9 289.8 154.8 291.7 157.7Z M332.5 136.7 332.0 139.7 330.9 137.7 331.9 135.6 332.5 136.7Z M212.2 108.8 215.5 109.3 215.7 110.4 214.1 110.7 214.5 112.2 220.6 116.8 220.6 117.5 219.1 116.7 219.4 118.6 218.5 119.8 217.6 117.2 213.2 114.4 212.1 112.5 210.8 111.9 209.4 112.7 208.9 112.0 208.7 109.9 210.8 109.9 212.2 108.8ZM217.1 119.6 217.9 119.5 217.5 121.5 214.7 120.2 214.9 119.6 217.1 119.6ZM210.8 116.2 211.9 116.7 211.8 118.3 211.0 118.6 210.2 116.1 210.8 116.2Z M211.1 99.1 209.8 99.1 209.3 97.3 211.5 95.9 211.9 97.4 211.1 99.1ZM213.3 97.8 213.1 99.3 211.9 98.2 213.3 97.8Z M196.3 100.4 195.0 100.2 195.1 98.9 196.8 99.6 196.3 100.4ZM199.1 101.0 197.4 98.2 196.9 98.7 196.4 97.0 197.5 94.9 199.3 94.9 198.3 96.1 200.2 96.0 199.2 98.0 200.1 98.0 202.4 101.6 203.6 101.8 202.5 104.1 197.0 105.1 198.8 103.4 197.0 102.7 198.0 102.3 197.7 100.9 199.1 101.0Z M190.1 86.2 190.6 87.6 186.2 89.4 182.8 88.9 183.7 88.4 182.0 87.8 183.5 87.3 181.8 87.1 183.8 86.2 184.9 86.9 190.1 86.2Z M248.6 115.0 250.2 115.9 250.8 115.1 253.0 117.0 252.2 117.1 251.9 119.4 250.8 117.8 249.4 118.8 248.3 117.4 247.3 115.7 248.9 116.0 248.6 115.0Z M241.7 113.1 247.5 114.2 249.0 115.8 243.8 115.4 243.4 114.0 241.7 113.1Z M333.9 151.3 333.3 150.3 334.6 150.8 334.5 151.9 333.9 151.3ZM336.2 154.6 336.5 153.5 337.0 154.3 337.7 153.1 336.8 155.8 336.2 154.6ZM340.5 156.6 340.8 158.1 340.5 159.3 340.0 158.0 339.5 158.6 339.7 160.1 338.3 159.4 337.5 157.3 335.7 158.1 337.3 156.3 337.8 156.8 339.5 155.9 339.3 154.9 340.5 156.6ZM331.8 155.5 330.4 156.7 332.7 152.9 333.0 153.9 331.8 155.5ZM334.5 144.4 334.7 149.2 337.2 149.9 337.5 151.5 336.1 150.2 333.5 149.8 333.8 149.0 332.5 147.9 332.7 144.0 334.5 144.4ZM335.4 152.9 336.6 153.2 335.5 154.1 335.4 152.9ZM339.1 151.9 339.6 153.3 338.7 153.0 338.6 154.5 337.7 151.4 339.1 151.9Z M311.8 159.0 315.1 160.2 316.6 165.5 313.4 163.6 311.8 159.0ZM331.5 161.9 329.3 161.7 328.0 165.3 323.5 166.1 322.8 165.4 322.6 164.6 324.2 164.8 324.4 163.7 326.2 163.2 327.5 161.4 328.7 161.7 330.1 158.5 332.9 160.3 331.5 161.9Z M328.8 160.3 328.0 162.1 327.5 161.4 328.8 160.3Z M215.5 109.3 218.2 109.3 217.1 110.6 215.5 110.5 215.5 109.3Z M224.8 83.4 226.3 84.8 225.8 85.6 227.0 86.8 227.5 89.3 228.9 90.1 226.5 92.7 222.1 93.5 220.6 92.5 220.0 90.4 223.2 87.6 221.4 86.2 221.0 84.6 218.5 83.3 221.9 83.8 223.9 82.2 225.0 82.6 224.8 83.4Z M223.7 106.2 223.1 107.1 222.0 106.7 219.3 107.8 218.3 106.9 219.8 105.7 223.7 106.2Z M216.2 103.7 220.1 105.7 218.3 106.8 216.7 106.2 215.8 106.8 213.7 104.7 216.2 103.7Z M241.7 149.1 242.0 146.0 243.6 144.7 244.7 147.2 249.0 151.3 248.2 151.5 245.6 149.0 243.3 148.4 243.0 149.4 241.7 149.1Z M346.4 118.3 347.3 123.3 344.5 124.0 343.6 125.4 342.3 124.0 338.4 124.9 339.8 125.8 340.0 127.9 338.8 128.0 337.0 125.6 339.3 123.0 342.4 122.8 342.3 120.6 343.3 121.2 344.5 119.5 343.3 115.8 344.2 115.6 346.4 118.3ZM345.4 112.4 345.8 111.9 346.9 113.3 345.6 113.6 345.6 114.8 343.4 114.0 343.8 115.3 342.7 115.4 341.7 114.1 341.6 113.2 342.6 113.1 341.5 110.5 345.4 112.4ZM340.0 125.4 341.2 124.3 342.4 125.0 341.1 126.4 340.0 125.4Z M139.2 192.2 139.6 194.6 142.0 194.9 142.6 196.9 143.8 197.0 143.6 200.2 142.8 201.2 139.6 200.9 140.2 198.4 134.6 194.8 135.2 191.5 138.1 191.2 139.2 192.2Z M258.3 143.4 259.7 146.3 258.8 147.7 249.5 151.3 248.4 148.1 249.0 145.2 253.0 146.0 255.2 143.9 258.3 143.4Z M239.0 130.5 241.6 129.7 242.1 129.1 240.9 127.8 243.1 127.0 249.3 130.7 252.3 131.0 255.4 133.8 257.9 138.4 261.3 138.8 261.9 139.7 261.4 142.2 255.2 143.9 253.0 146.0 249.0 145.2 248.5 146.7 244.2 140.6 243.3 137.6 238.8 132.1 239.0 130.5Z M235.9 123.3 237.3 123.5 236.3 124.0 235.9 123.3Z M199.8 123.3 200.6 126.9 192.8 131.2 192.6 133.3 189.9 133.6 186.1 140.3 183.7 140.4 186.6 134.4 191.9 129.8 192.3 126.5 194.8 124.6 195.9 122.5 199.8 123.3Z M241.7 139.7 228.9 139.7 228.4 127.8 232.4 128.6 234.5 127.8 235.6 128.6 238.0 128.2 238.9 130.3 238.3 132.4 236.2 130.0 240.3 137.3 240.2 138.3 241.7 139.7Z M228.9 139.7 229.0 142.2 227.8 142.7 219.0 137.9 217.2 139.1 213.0 136.7 211.9 134.6 212.0 129.3 214.0 125.8 218.0 126.9 218.5 128.0 222.1 129.4 223.8 126.3 228.1 127.4 228.9 139.7Z M254.4 157.1 251.4 160.8 248.0 162.2 246.8 161.8 245.5 162.8 241.7 161.5 238.1 157.4 239.1 156.6 241.7 149.1 243.0 149.4 243.3 148.4 247.4 150.3 248.2 151.5 247.7 153.3 248.8 153.5 249.9 155.6 254.4 157.1Z M248.2 151.5 249.3 151.6 248.8 153.5 247.7 153.3 248.2 151.5Z M255.5 152.9 255.6 155.3 254.4 157.1 249.9 155.6 248.6 153.9 249.2 152.8 250.3 154.1 255.5 152.9Z M239.3 168.3 234.5 168.7 236.3 162.4 239.4 161.8 239.9 162.6 240.5 164.7 239.3 168.3Z M235.5 168.5 235.8 169.9 233.9 170.6 234.2 169.1 235.5 168.5Z M220.5 114.0 217.7 110.8 221.1 111.3 220.5 114.0Z M224.4 114.4 225.1 115.6 222.8 115.9 222.8 114.8 224.4 114.4Z M220.5 110.0 221.8 109.8 224.4 111.6 224.4 114.4 221.1 112.9 220.5 110.0Z M222.1 114.1 221.4 115.0 220.4 114.2 221.1 112.9 222.1 114.1Z M222.7 115.0 222.1 114.1 222.7 113.3 223.7 114.0 222.7 115.0Z M134.5 153.7 135.4 153.6 135.3 154.5 134.2 154.5 134.5 153.7Z M235.9 162.7 234.6 161.3 232.7 161.6 228.2 156.3 230.2 154.1 231.3 155.3 233.7 155.4 234.8 154.3 236.3 154.9 237.4 153.3 237.0 152.2 238.3 151.9 239.2 156.3 238.1 157.4 240.8 160.2 238.7 162.4 235.9 162.7Z"/><path class="mc1" d="M84.0 106.3 111.1 105.8 111.2 106.7 113.5 107.3 116.7 107.1 120.8 110.7 118.9 115.2 128.2 111.1 131.5 111.1 134.8 108.2 136.0 108.6 135.9 111.4 132.4 112.7 131.1 114.4 131.7 115.3 127.7 116.1 129.4 116.1 127.3 116.4 125.7 118.6 125.3 117.9 125.4 119.3 124.0 120.7 124.3 118.3 123.9 119.7 123.3 119.5 123.7 122.8 116.6 127.9 116.7 133.6 116.0 135.7 114.7 134.9 113.6 129.8 112.0 130.2 110.9 129.2 107.4 129.5 107.4 130.8 101.9 130.4 98.8 132.4 97.8 134.9 96.4 134.2 95.2 130.5 92.0 130.6 90.2 127.5 85.3 128.1 82.0 126.3 79.4 126.6 78.7 124.7 76.7 124.0 76.1 116.9 81.6 107.3 83.0 107.4 82.8 108.6 84.0 106.3ZM34.1 142.1 34.6 142.8 33.5 143.5 33.3 142.5 34.1 142.1ZM56.3 92.9 55.7 93.6 55.2 93.1 56.3 92.9ZM64.9 95.7 65.4 96.1 62.7 97.1 64.9 95.7ZM90.2 82.7 78.5 93.0 79.9 93.3 80.0 94.6 82.8 93.6 82.7 97.3 83.5 98.0 81.9 99.3 81.3 98.5 82.2 95.5 80.0 95.4 76.9 93.2 73.9 92.3 67.7 94.3 71.3 91.9 57.7 97.9 49.9 99.8 60.4 96.1 62.7 94.6 58.0 94.8 59.3 93.7 57.5 92.7 61.9 89.8 65.9 89.1 67.4 87.9 63.4 88.3 62.5 88.1 62.5 87.0 66.9 86.0 67.6 86.0 66.7 86.6 68.5 86.5 67.7 84.1 68.9 83.6 80.4 81.0 90.2 82.7ZM56.7 89.1 58.6 89.6 57.4 90.0 56.2 89.6 56.7 89.1Z"/><path class="mc2" d="M305.3 131.9 305.4 133.3 303.4 134.0 301.7 139.6 300.9 137.7 300.5 138.5 299.8 137.8 300.9 136.0 298.2 135.6 296.4 134.1 297.1 135.6 296.4 136.6 297.7 140.1 295.7 140.3 295.4 142.0 291.3 146.5 289.3 147.3 289.4 154.2 287.0 157.2 282.0 147.2 280.3 140.5 278.0 141.1 275.1 137.6 275.8 136.7 278.1 136.7 276.0 133.5 277.0 132.2 278.2 132.3 280.8 126.9 278.7 124.3 281.8 123.9 282.5 122.9 284.0 124.3 284.7 127.8 287.6 129.5 286.8 131.2 292.8 133.8 295.9 134.2 295.6 132.4 296.2 132.1 297.6 133.8 300.0 133.7 299.4 132.5 302.1 130.6 303.7 130.4 304.1 131.7 305.3 131.9Z"/><path class="mc3" d="M146.4 209.1 145.6 207.0 141.2 204.7 144.9 200.6 144.8 199.6 143.7 199.1 143.8 197.0 142.6 196.9 142.0 194.9 139.6 194.6 139.7 189.7 138.7 187.4 136.6 187.3 136.0 184.2 130.5 181.5 130.4 179.2 127.3 180.8 124.8 180.8 124.8 178.9 123.0 179.6 121.8 178.9 120.9 176.4 121.9 173.6 125.2 172.4 125.7 168.5 125.0 166.4 125.9 165.8 125.2 164.9 127.8 164.5 128.3 165.7 129.9 166.1 132.3 164.3 131.4 164.0 130.8 162.0 132.7 162.4 135.3 160.6 136.1 160.8 136.1 163.6 137.1 165.4 140.4 164.8 140.5 163.9 143.8 164.4 145.6 161.8 147.1 164.9 146.6 167.2 148.5 167.4 148.6 168.6 149.4 167.8 152.6 169.0 153.0 170.4 158.1 170.7 161.1 173.1 162.9 173.5 163.9 176.2 163.5 178.3 159.8 183.3 159.4 189.3 157.9 194.4 156.9 195.7 154.1 196.2 151.0 198.1 150.2 199.3 150.2 202.8 146.4 209.1Z"/><path class="mc4" d="M320.6 144.4 319.5 143.0 321.7 142.1 320.6 144.4ZM282.3 114.4 282.5 113.4 280.9 111.2 283.0 110.5 282.8 108.3 284.9 108.7 284.7 106.9 286.2 105.9 290.6 108.8 291.5 110.8 296.4 112.1 298.2 113.9 302.7 114.0 307.5 115.3 311.2 114.2 313.0 112.7 312.2 111.0 314.0 111.4 316.5 109.1 318.7 109.1 316.1 107.4 314.1 107.8 313.5 105.2 314.9 105.6 315.8 104.9 314.7 101.2 318.5 101.3 328.9 107.7 332.2 106.9 333.1 111.0 331.2 111.2 332.7 114.3 331.6 113.6 330.4 114.8 330.9 115.5 329.3 115.0 328.0 117.4 325.3 118.7 325.6 116.8 324.7 116.1 321.8 118.9 324.9 120.8 325.7 119.9 328.0 121.1 326.7 121.4 325.6 123.6 329.9 127.6 331.1 131.9 329.1 136.5 326.6 138.7 321.4 140.4 321.2 141.7 320.4 140.4 317.3 139.9 316.7 138.7 315.1 138.0 311.3 139.3 311.7 140.7 311.2 140.7 310.9 139.9 308.8 139.5 307.8 137.1 306.7 137.3 306.9 132.8 305.9 131.8 304.1 131.7 303.7 130.4 302.1 130.6 300.2 132.3 297.5 131.8 296.5 133.1 296.2 132.1 293.1 132.0 284.7 127.8 284.0 124.3 280.7 122.4 276.9 118.0 282.3 114.4Z"/></g><rect x="4" y="46" width="396" height="214" rx="6" class="mframe"/><text x="102" y="101" text-anchor="middle" class="mlab lc1">United States</text><text x="272" y="170" text-anchor="middle" class="mlab lc2">India</text><text x="148" y="204" text-anchor="middle" class="mlab lc3">Brazil</text><text x="322" y="101" text-anchor="middle" class="mlab lc4">China</text><text x="4" y="279" class="fnote">Every country the data covers is on the map; the four in colour are the four charted.</text><text x="446" y="37" class="ptitle lc1">United States</text><rect x="446" y="46" width="168" height="100" rx="4" class="pbg"/><rect x="570.2" y="46" width="8.8" height="100" class="pband"/><line x1="446" y1="133.0" x2="614.0" y2="133.0" class="pgrid"/><line x1="446" y1="89.5" x2="614.0" y2="89.5" class="pgrid"/><line x1="446" y1="67.7" x2="614.0" y2="67.7" class="pgrid"/><line x1="446" y1="46.0" x2="614.0" y2="46.0" class="pgrid"/><line x1="446" y1="111.2" x2="614.0" y2="111.2" class="pzero"/><polygon points="453.0,96.0 461.1,99.0 469.2,102.5 477.3,110.8 485.4,122.5 493.5,99.5 501.6,104.3 509.7,101.2 517.8,102.1 525.9,100.3 534.1,98.6 542.2,103.4 550.3,100.3 558.4,98.2 566.5,100.3 574.6,120.8 582.7,84.7 590.8,100.3 598.9,98.6 607.0,99.0 607.0,111.2 453.0,111.2" class="ac1"/><polyline points="453.0,96.0 461.1,99.0 469.2,102.5 477.3,110.8 485.4,122.5 493.5,99.5 501.6,104.3 509.7,101.2 517.8,102.1 525.9,100.3 534.1,98.6 542.2,103.4 550.3,100.3 558.4,98.2 566.5,100.3 574.6,120.8 582.7,84.7 590.8,100.3 598.9,98.6 607.0,99.0" class="sc1"/><circle cx="485.4" cy="122.5" r="2.9" class="dc1"/><text x="485.4" y="114.5" text-anchor="middle" class="pmin">-2.6</text><text x="440" y="136.2" text-anchor="end" class="ptk">-5</text><line x1="442" y1="133.0" x2="446" y2="133.0" class="pax"/><text x="440" y="114.4" text-anchor="end" class="ptk">0</text><line x1="442" y1="111.2" x2="446" y2="111.2" class="pax"/><text x="440" y="92.7" text-anchor="end" class="ptk">5</text><line x1="442" y1="89.5" x2="446" y2="89.5" class="pax"/><text x="440" y="70.9" text-anchor="end" class="ptk">10</text><line x1="442" y1="67.7" x2="446" y2="67.7" class="pax"/><text x="440" y="49.2" text-anchor="end" class="ptk">15</text><line x1="442" y1="46.0" x2="446" y2="46.0" class="pax"/><text x="628" y="37" class="ptitle lc2">India</text><rect x="628" y="46" width="168" height="100" rx="4" class="pbg"/><rect x="752.2" y="46" width="8.8" height="100" class="pband"/><line x1="628" y1="133.0" x2="796.0" y2="133.0" class="pgrid"/><line x1="628" y1="89.5" x2="796.0" y2="89.5" class="pgrid"/><line x1="628" y1="67.7" x2="796.0" y2="67.7" class="pgrid"/><line x1="628" y1="46.0" x2="796.0" y2="46.0" class="pgrid"/><line x1="628" y1="111.2" x2="796.0" y2="111.2" class="pzero"/><polygon points="635.0,70.8 643.1,70.8 651.2,68.6 659.3,94.3 667.4,74.3 675.5,66.4 683.6,82.5 691.7,87.3 699.8,83.4 707.9,79.0 716.1,76.4 724.2,75.1 732.3,81.7 740.4,83.0 748.5,94.3 756.6,136.4 764.7,71.7 772.8,79.9 780.9,75.6 789.0,83.0 789.0,111.2 635.0,111.2" class="ac2"/><polyline points="635.0,70.8 643.1,70.8 651.2,68.6 659.3,94.3 667.4,74.3 675.5,66.4 683.6,82.5 691.7,87.3 699.8,83.4 707.9,79.0 716.1,76.4 724.2,75.1 732.3,81.7 740.4,83.0 748.5,94.3 756.6,136.4 764.7,71.7 772.8,79.9 780.9,75.6 789.0,83.0" class="sc2"/><circle cx="756.6" cy="136.4" r="2.9" class="dc2"/><text x="756.6" y="128.4" text-anchor="middle" class="pmin">-5.8</text><text x="446" y="181" class="ptitle lc3">Brazil</text><rect x="446" y="190" width="168" height="100" rx="4" class="pbg"/><rect x="570.2" y="190" width="8.8" height="100" class="pband"/><line x1="446" y1="277.0" x2="614.0" y2="277.0" class="pgrid"/><line x1="446" y1="233.5" x2="614.0" y2="233.5" class="pgrid"/><line x1="446" y1="211.7" x2="614.0" y2="211.7" class="pgrid"/><line x1="446" y1="190.0" x2="614.0" y2="190.0" class="pgrid"/><line x1="446" y1="255.2" x2="614.0" y2="255.2" class="pzero"/><polygon points="453.0,241.3 461.1,237.8 469.2,228.7 477.3,233.0 485.4,255.7 493.5,222.6 501.6,237.8 509.7,247.0 517.8,242.2 525.9,253.0 534.1,270.4 542.2,269.6 550.3,249.6 558.4,247.4 566.5,250.0 574.6,269.6 582.7,233.5 590.8,242.2 598.9,242.6 607.0,240.4 607.0,255.2 453.0,255.2" class="ac3"/><polyline points="453.0,241.3 461.1,237.8 469.2,228.7 477.3,233.0 485.4,255.7 493.5,222.6 501.6,237.8 509.7,247.0 517.8,242.2 525.9,253.0 534.1,270.4 542.2,269.6 550.3,249.6 558.4,247.4 566.5,250.0 574.6,269.6 582.7,233.5 590.8,242.2 598.9,242.6 607.0,240.4" class="sc3"/><circle cx="534.1" cy="270.4" r="2.9" class="dc3"/><text x="534.1" y="262.4" text-anchor="middle" class="pmin">-3.5</text><text x="440" y="280.2" text-anchor="end" class="ptk">-5</text><line x1="442" y1="277.0" x2="446" y2="277.0" class="pax"/><text x="440" y="258.4" text-anchor="end" class="ptk">0</text><line x1="442" y1="255.2" x2="446" y2="255.2" class="pax"/><text x="440" y="236.7" text-anchor="end" class="ptk">5</text><line x1="442" y1="233.5" x2="446" y2="233.5" class="pax"/><text x="440" y="214.9" text-anchor="end" class="ptk">10</text><line x1="442" y1="211.7" x2="446" y2="211.7" class="pax"/><text x="440" y="193.2" text-anchor="end" class="ptk">15</text><line x1="442" y1="190.0" x2="446" y2="190.0" class="pax"/><text x="446" y="305" text-anchor="start" class="ptk">2005</text><text x="614.0" y="305" text-anchor="end" class="ptk">2024</text><text x="628" y="181" class="ptitle lc4">China</text><rect x="628" y="190" width="168" height="100" rx="4" class="pbg"/><rect x="752.2" y="190" width="8.8" height="100" class="pband"/><line x1="628" y1="277.0" x2="796.0" y2="277.0" class="pgrid"/><line x1="628" y1="233.5" x2="796.0" y2="233.5" class="pgrid"/><line x1="628" y1="211.7" x2="796.0" y2="211.7" class="pgrid"/><line x1="628" y1="190.0" x2="796.0" y2="190.0" class="pgrid"/><line x1="628" y1="255.2" x2="796.0" y2="255.2" class="pzero"/><polygon points="635.0,205.7 643.1,200.0 651.2,193.5 659.3,213.0 667.4,214.3 675.5,209.1 683.6,213.5 691.7,220.9 699.8,221.3 707.9,223.0 716.1,224.8 724.2,225.7 732.3,225.2 740.4,226.1 748.5,229.1 756.6,245.7 764.7,218.7 772.8,242.2 780.9,232.6 789.0,233.5 789.0,255.2 635.0,255.2" class="ac4"/><polyline points="635.0,205.7 643.1,200.0 651.2,193.5 659.3,213.0 667.4,214.3 675.5,209.1 683.6,213.5 691.7,220.9 699.8,221.3 707.9,223.0 716.1,224.8 724.2,225.7 732.3,225.2 740.4,226.1 748.5,229.1 756.6,245.7 764.7,218.7 772.8,242.2 780.9,232.6 789.0,233.5" class="sc4"/><circle cx="756.6" cy="245.7" r="2.9" class="dc4"/><text x="756.6" y="258.7" text-anchor="middle" class="pmin">2.2</text><text x="628" y="305" text-anchor="start" class="ptk">2005</text><text x="796.0" y="305" text-anchor="end" class="ptk">2024</text><text x="422" y="168" text-anchor="middle" transform="rotate(-90 422 168)" class="paxl">GDP growth / % per year</text><text x="621" y="322" text-anchor="middle" class="paxl">year<tspan class="pdim">   &#8212;   shaded band marks 2020</tspan></text></svg>
+<p class="cap"><strong>One R script made all of this</strong> &mdash; the map, the four charts, and
+the layout that joins them into one picture. The colours are written down once and handed to both
+halves, so a country is the same colour wherever it turns up.</p>
+<p class="cap">Excel can colour a map. What it cannot do is tie that map's colours to four separate
+charts, or combine the five into a single figure &mdash; that part is done by hand, again, every time
+the numbers change.</p>
+<details class="more codepeek">
+<summary>Show me the 53 lines</summary>
+<div class="more-body">
+<div class="code" data-lang="R &mdash; the whole figure, runs as-is"><pre><code class="language-r"># Runs as-is: it fetches the map itself, numbers are below.
+# tidyverse = data handling + ggplot2, sf = map shapes,
+# patchwork = sticks finished plots together.
+for (pkg in c("tidyverse", "sf", "patchwork"))
+  if (!requireNamespace(pkg, quietly = TRUE))
+    install.packages(pkg)
+
+library(tidyverse); library(sf); library(patchwork)
+
+# one palette, handed to BOTH halves of the figure
+pal &lt;- c("United States" = "#3A46A8", "India" = "#B4741A",
+         "Brazil"        = "#0E7A66", "China" = "#A8326B")
+
+growth &lt;- tibble(
+  year    = rep(2005:2024, times = 4),
+  country = rep(names(pal), each = 20),
+  gdp_growth = c(
+    # United States
+    3.5, 2.8, 2.0, 0.1,-2.6, 2.7, 1.6, 2.3, 2.1, 2.5,
+    2.9, 1.8, 2.5, 3.0, 2.5,-2.2, 6.1, 2.5, 2.9, 2.8,
+    # India
+    9.3, 9.3, 9.8, 3.9, 8.5,10.3, 6.6, 5.5, 6.4, 7.4,
+    8.0, 8.3, 6.8, 6.5, 3.9,-5.8, 9.1, 7.2, 8.2, 6.5,
+    # Brazil
+    3.2, 4.0, 6.1, 5.1,-0.1, 7.5, 4.0, 1.9, 3.0, 0.5,
+   -3.5,-3.3, 1.3, 1.8, 1.2,-3.3, 5.0, 3.0, 2.9, 3.4,
+    # China
+   11.4,12.7,14.2, 9.7, 9.4,10.6, 9.6, 7.9, 7.8, 7.4,
+    7.0, 6.8, 6.9, 6.7, 6.0, 2.2, 8.4, 3.0, 5.2, 5.0))
+
+url &lt;- paste0("https://raw.githubusercontent.com/",
+              "nvkelso/natural-earth-vector/master/",
+              "geojson/ne_110m_admin_0_countries.geojson")
+world &lt;- read_sf(url)
+
+# The map says "United States of America", our table says
+# "United States". Making two sets of names agree is the
+# commonest real data job there is. Here it is one line.
+world$country &lt;- recode(world$ADMIN,
+  "United States of America" = "United States")
+
+map &lt;- ggplot(world) +
+  geom_sf(aes(fill = country), colour = "grey85") +
+  scale_fill_manual(values = pal, na.value = "grey88",
+                    guide = "none") +
+  coord_sf(crs = "+proj=robin") +
+  theme_void()
+
+lines &lt;- ggplot(growth,
+                aes(year, gdp_growth, colour = country)) +
+  geom_hline(yintercept = 0, linetype = "dashed") +
+  geom_area(aes(fill = country), alpha = 0.15) +
+  geom_line(linewidth = 0.8) +
+  facet_wrap(~ country) +          # four panels, one line
+  scale_colour_manual(values = pal, guide = "none") +
+  scale_fill_manual(values = pal, guide = "none") +
+  labs(x = "year", y = "GDP growth / % per year") +
+  theme_minimal()
+
+map + lines                        # patchwork joins them
+ggsave("figure.png", width = 11, height = 4.5)</code></pre></div>
+<p>You are not expected to understand this yet, and you do not need to for the practical. Notice only
+two things. <strong>The palette is written once</strong> and used by both plots, which is why the map
+and the lines can never drift out of agreement. And <strong><code>map + lines</code> is the entire
+layout step</strong> &mdash; you add two pictures together the way you would add two numbers.</p>
+</div>
+</details>
+<p class="cap tiny">Roughly 53 lines of R &mdash; about half of them the twenty years of numbers. Expandable above; it runs as it stands. Map: real Natural Earth outlines,
+Robinson projection. The copy above is drawn into this page; the R in the expander is genuine and makes the same figure. The growth figures follow the real pattern but are illustrative.</p>
+</div>
+<p><strong>Each of those is one script.</strong> Nothing was clicked, dragged or nudged into place by
+hand, and running the script again next year gives back the identical picture with the new numbers in
+it.</p>
+</section>
+<section id="why">
+<h2>Why not just use Excel?</h2>
+<p><strong>For this practical, Excel is the better tool.</strong> Six points, one line, one R&#178;. You
+already know Excel, it is already installed, and it will take you five minutes. Anyone who tells you
+otherwise is selling something.</p>
+<p>So why is this document here? Because of what comes <em>after</em> six data points.</p>
+<p>R is the free program that biology departments, research groups, hospitals running drug trials and
+a good deal of economics and psychology actually use to analyse their data. You will almost certainly
+meet it, or something very like it, at some point after this course.</p>
+<p>And this practical is the <strong>cheapest possible moment to meet it</strong>. You already know
+what the right answer looks like, because you can get it in Excel in five minutes. So if R gives you
+something different, you will know immediately that you &mdash; not the software &mdash; made a
+mistake. Learning a tool on a problem you have already solved is far easier than learning it on a
+problem you haven't.</p>
+
+<p><strong>R is not only a biology tool</strong> &mdash; that is the part worth knowing. It is
+also what economics, psychology and political science run on, and in those subjects it is not a
+specialism, it is the ordinary equipment. Whatever you go on to study, if it involves data you will
+meet R, or its close cousin Python, in your first year, and you will be expected to find it
+unremarkable.</p>
+
+<h3>And there is a hard wall</h3>
+<p>Microsoft's own specification puts a single Excel worksheet at a ceiling of
+<strong>1,048,576 rows</strong>. That sounds enormous until you meet real data.</p>
+<p><strong>In biology:</strong> a single-cell sequencing run puts one row per cell, and a modest
+experiment has several million of them.</p>
+<p><strong>In economics or social science:</strong> census and survey microdata put one row per
+person. The 2021 census of England and Wales counted <strong>59,597,542</strong> usual residents
+&mdash; fifty-six times more rows than a worksheet can hold. Financial tick data is worse: one row per
+trade, millions in a single day on one exchange.</p>
+<p>R has no such limit. It is bounded by the memory in the machine, not by the file format.</p>
+
+<h3>And one that matters whatever you go on to study</h3>
+<div class="taste fig"><svg viewBox="0 0 570 236" role="img" aria-label="Left, two bars of identical height with identical error bars. Right, the individual reaction times: group one is one tight cluster, group two splits into two separate clusters.">
+<text x="59" y="14" class="pt">what the bar chart shows</text><text x="316" y="14" class="pt">what the data actually looks like</text>
+<text x="52" y="193.2" class="tk" text-anchor="end">0</text><line x1="55" y1="190.0" x2="59" y2="190.0" class="ax"/><text x="52" y="113.2" class="tk" text-anchor="end">450</text><line x1="55" y1="110.0" x2="59" y2="110.0" class="ax"/><text x="52" y="33.2" class="tk" text-anchor="end">900</text><line x1="55" y1="30.0" x2="59" y2="30.0" class="ax"/><line x1="59" y1="30" x2="59" y2="190" class="ax"/><line x1="59" y1="190" x2="250" y2="190" class="ax"/>
+<rect x="88" y="74.4" width="48" height="115.6" class="b1"/>
+<rect x="166" y="74.4" width="48" height="115.6" class="b2"/>
+<line x1="112" y1="63.8" x2="112" y2="85.1" class="eb1"/><line x1="102" y1="63.8" x2="122" y2="63.8" class="eb1"/><line x1="102" y1="85.1" x2="122" y2="85.1" class="eb1"/><line x1="190" y1="63.8" x2="190" y2="85.1" class="eb2"/><line x1="180" y1="63.8" x2="200" y2="63.8" class="eb2"/><line x1="180" y1="85.1" x2="200" y2="85.1" class="eb2"/>
+<text x="112" y="205" class="tk gl1" text-anchor="middle">group 1</text>
+<text x="190" y="205" class="tk gl2" text-anchor="middle">group 2</text>
+<line x1="316" y1="30" x2="316" y2="190" class="ax"/><line x1="316" y1="190" x2="546" y2="190" class="ax"/>
+<circle cx="377.0" cy="78.2" r="3.5" class="d1"/><circle cx="358.6" cy="73.2" r="3.5" class="d1"/><circle cx="380.7" cy="68.3" r="3.5" class="d1"/><circle cx="369.5" cy="82.4" r="3.5" class="d1"/><circle cx="393.8" cy="76.6" r="3.5" class="d1"/><circle cx="362.3" cy="62.1" r="3.5" class="d1"/><circle cx="362.8" cy="67.6" r="3.5" class="d1"/><circle cx="374.2" cy="74.8" r="3.5" class="d1"/><circle cx="374.7" cy="78.3" r="3.5" class="d1"/><circle cx="360.6" cy="75.7" r="3.5" class="d1"/><circle cx="369.2" cy="86.9" r="3.5" class="d1"/><circle cx="382.7" cy="66.9" r="3.5" class="d1"/><circle cx="373.6" cy="71.7" r="3.5" class="d1"/><circle cx="354.7" cy="73.3" r="3.5" class="d1"/><circle cx="371.1" cy="84.8" r="3.5" class="d1"/><circle cx="371.1" cy="80.2" r="3.5" class="d1"/><circle cx="372.6" cy="70.3" r="3.5" class="d1"/><circle cx="353.1" cy="72.4" r="3.5" class="d1"/><circle cx="364.6" cy="78.4" r="3.5" class="d1"/><circle cx="395.7" cy="70.4" r="3.5" class="d1"/><circle cx="392.6" cy="66.9" r="3.5" class="d1"/><circle cx="395.3" cy="79.8" r="3.5" class="d1"/><circle cx="386.9" cy="78.7" r="3.5" class="d1"/><circle cx="372.0" cy="81.4" r="3.5" class="d1"/><circle cx="507.1" cy="105.4" r="3.5" class="d2"/><circle cx="477.8" cy="92.2" r="3.5" class="d2"/><circle cx="491.3" cy="94.1" r="3.5" class="d2"/><circle cx="491.0" cy="95.3" r="3.5" class="d2"/><circle cx="484.3" cy="105.5" r="3.5" class="d2"/><circle cx="475.5" cy="104.6" r="3.5" class="d2"/><circle cx="479.2" cy="98.0" r="3.5" class="d2"/><circle cx="493.6" cy="100.3" r="3.5" class="d2"/><circle cx="477.1" cy="96.7" r="3.5" class="d2"/><circle cx="479.9" cy="102.3" r="3.5" class="d2"/><circle cx="480.3" cy="93.1" r="3.5" class="d2"/><circle cx="478.9" cy="85.4" r="3.5" class="d2"/><circle cx="502.1" cy="40.5" r="3.5" class="d2"/><circle cx="489.1" cy="40.1" r="3.5" class="d2"/><circle cx="464.8" cy="50.5" r="3.5" class="d2"/><circle cx="498.1" cy="44.8" r="3.5" class="d2"/><circle cx="487.1" cy="53.5" r="3.5" class="d2"/><circle cx="499.8" cy="44.8" r="3.5" class="d2"/><circle cx="486.7" cy="53.5" r="3.5" class="d2"/><circle cx="478.3" cy="54.3" r="3.5" class="d2"/><circle cx="502.6" cy="55.3" r="3.5" class="d2"/><circle cx="472.0" cy="46.3" r="3.5" class="d2"/><circle cx="476.8" cy="49.1" r="3.5" class="d2"/><circle cx="486.3" cy="49.7" r="3.5" class="d2"/>
+<text x="375" y="205" class="tk gl1" text-anchor="middle">group 1</text>
+<text x="487" y="205" class="tk gl2" text-anchor="middle">group 2</text>
+<text x="16" y="110" class="axl" text-anchor="middle" transform="rotate(-90 16 110)">reaction time / ms</text>
+<text x="285" y="230" class="axl" text-anchor="middle">24 people in each group  ·  same mean, same error bar</text></svg>
+<p class="cap"><strong>Same mean, same error bar.</strong> On the left the bar chart says these two
+groups are identical. On the right, one dot per person: <span class="gl1x">group 1</span> is one tight
+cluster and <span class="gl2x">group 2</span> splits cleanly in two. R plots the dots by default.</p>
+</div>
+<div class="good"><span class="lbl">The honest summary</span>
+<p><strong>Use both.</strong> That is what most working scientists actually do &mdash; this is not a
+choice you have to make once and stick to.</p>
+<p>Reach for <strong>Excel</strong> when you want to <em class="term">look</em> at your numbers, type a
+few in by hand, and get a quick total or a quick chart. For small jobs it is faster, and there is no
+shame in that whatsoever.</p>
+<p>Reach for <strong>R</strong> when the analysis has to be <em class="term">repeatable</em> &mdash;
+somebody, probably you, will run it again; when it is <em class="term">large</em> &mdash; more files or
+more rows than you want to click through; or when the statistics go <em class="term">beyond a straight
+line</em>.</p></div>
+
+<details class="more">
+<summary>The longer answer &mdash; five reasons, and where Excel still wins</summary>
+<div class="more-body">
+<h3>1 &middot; The script is the method</h3>
+<p>An R script is just a text file: a list of instructions, read from the top down. That makes it a
+<strong>complete written record of everything you did to your data</strong>, in the order you did it
+&mdash; which readings you put in, which ones you decided to leave out, what you fitted, what you drew.</p>
+<p>Hand that one file to your teacher, to an IB moderator, or to yourself in six months' time. They
+press <code>Source</code> and <strong>the same numbers come out</strong>. Nothing has to be remembered,
+and nothing has to be taken on trust.</p>
+<p>A spreadsheet cannot do this, because its working is hidden <em class="term">inside individual
+cells</em> &mdash; one formula per cell, visible only when you click on that cell. Nobody clicks on
+every cell. That is not a small complaint about tidiness: it is precisely how a mistake in a
+spreadsheet can survive for years without anyone noticing it.</p>
+<div class="warn"><span class="lbl">How bad does that get?</span>
+<p>In 2020 the committee that names human genes <strong>renamed 27 of them</strong> because Excel kept
+autocorrecting gene names like <code>SEPT2</code> into dates. Rather than fight the spreadsheet, biology
+changed its own naming rules.</p></div>
+
+<h3>2 &middot; It scales, and at some point a spreadsheet stops</h3>
+<p>This practical hands you <strong>six tubes and one graph</strong>. At that size Excel wins, and it
+is not close &mdash; you can click your way to the answer faster than you could type the code.</p>
+<p>Now picture the same experiment run across a whole year group: <strong>five classes, eight groups
+in each, three readings per tube</strong>. That is several hundred numbers, sitting in forty separate
+files, because forty different people saved them.</p>
+<div class="vs">
+  <div class="x"><h4>Doing it in Excel</h4>
+  <p>Open file 1. Copy the numbers. Paste them into a master sheet. Check nothing landed a row out of
+  line. Open file 2. Repeat, thirty-eight more times. Then build the graph.</p>
+  <p>That is most of an afternoon, and <strong>every single paste is a chance to put a number in the
+  wrong place</strong> &mdash; silently, with no error message.</p></div>
+  <div class="r"><h4>Doing it in R</h4>
+  <p>You write the instruction once: <em class="term">read every file in this folder, stack them into
+  one table, fit the line, draw the graph.</em> Then you press Source and wait.</p>
+  <p>It is about twenty lines &mdash; and crucially, <strong>those twenty lines do not get longer when
+  the number of files does</strong>. Forty files or four hundred, it is the same script.</p></div>
+</div>
+<p>That is what people mean when they say a method <strong>&ldquo;scales&rdquo;</strong>: the effort
+stays flat while the data grows.</p>
+<p>The same property is why the <em class="term">second</em> time you run an analysis is essentially
+free. Suppose your teacher spots that one tube was misread, or you decide a point should be excluded
+from the fit. In R you change that one line and press Source, and everything downstream &mdash; the
+fit, the gradient, the R&#178;, the finished figure &mdash; is rebuilt from scratch in about a second.
+In a spreadsheet you would first have to work out every cell that mistake had leaked into.</p>
+
+<h3>3 &middot; Being straight with you about the statistics</h3>
+<p>Everything the IB Biology guide asks you to calculate &mdash; standard deviation, error bars, a
+t-test, a chi-squared test, the correlation coefficient r, and R&#178; &mdash; <strong>Excel has a
+built-in function for.</strong> If R had to justify itself on this syllabus alone, it would lose.</p>
+<p>So the honest case for R does not start until the syllabus stops. <strong>None of the three
+things below is required for your exams</strong>, and you will not be penalised for never having heard
+of them. All three are ordinary first-year university work, in biology and well beyond it:</p>
+<ul>
+  <li><strong>Fitting a curve to an equation</strong> instead of sketching one by eye. A t-test or
+  a straight line will not describe an enzyme levelling off, or a population growing. R has a
+  curve-fitting command, <code>nls()</code>, that finds the equation for you. Excel needs a bolt-on
+  tool called Solver and a lot of patience.</li>
+  <li><strong>Comparing more than two groups at once.</strong> A t-test compares two. For five you
+  would run it ten times, and each run adds another chance of spotting a difference that is not
+  really there. The proper test for that is called <strong>ANOVA</strong>, and it is one line in R.</li>
+  <li><strong>Data that are not a neat bell curve.</strong> A t-test assumes your measurements pile
+  up symmetrically around the mean. Real biological data often do not. R has a whole family of tests
+  that make no such assumption, and it can also <strong>bootstrap</strong> &mdash; shuffle and re-use
+  your own data thousands of times to see how much the answer wobbles.</li>
+</ul>
+<div class="note"><span class="lbl">For your IA and your exams</span>
+<p>Use whichever tool gets the analysis right. Excel is entirely sufficient for this course, and no
+mark anywhere is given for using R. Learn it for where it takes you next, not because the syllabus
+wants it &mdash; it doesn't.</p></div>
+
+<h3>4 &middot; It is what the field runs on</h3>
+<p>R is the standard tool in <strong>ecology</strong>, in <strong>genomics</strong> (the study of whole
+genomes), in <strong>epidemiology</strong> (tracking disease through populations) and in large parts of
+<strong>psychology</strong> and <strong>economics</strong>. Most life science degrees now teach it, or
+Python, in the first year.</p>
+<p>The blunt version: <strong>spreadsheet skills do not travel into a research lab, and R skills
+do.</strong> Nobody will ever ask you in a lab interview how good you are at Excel.</p>
+<p>There is also a smaller, more immediate point. Being able to say at sixteen that you fitted a
+straight-line model to data you collected yourself, and reported an R&#178; for it, is a genuinely
+unusual thing to be able to say.</p>
+
+<h3>5 &middot; You own the picture</h3>
+<p>A figure in R is <strong>described in writing</strong>, not produced by clicking on a chart and
+nudging bits of it around. You state which colour, which axis label, which text size, which layer sits
+on top &mdash; and that description is saved in the script with everything else.</p>
+<p>What that buys you is control and repeatability at the same time. Want the figure bigger for a
+poster, or in different colours, or with the units spelled out on the axis? <strong>Change one word
+and run it again.</strong> A year later, the same file still produces the identical picture &mdash;
+you never have to remember how you formatted it.</p>
+
+<h3>Being fair to Excel</h3>
+<p>Excel is not standing still, and it would be dishonest to pretend otherwise.</p>
+<p>Recent versions let you write your own reusable formulas, and pull in and tidy up data from other
+files automatically instead of copying and pasting it. Since 2025 you can also run <strong>Python</strong>
+directly inside a worksheet &mdash; Python being another free programming language, a close cousin of R
+and just as widely used for data work.</p>
+<p><strong>For a great deal of everyday analysis, Excel is genuinely enough</strong>, and choosing it is
+not a failure of ambition. The reason to learn R is that it takes you somewhere Excel does not go, not
+that Excel is bad.</p>
+</div>
+</details>
+</section>
+<div class="taste">
+<svg viewBox="0 0 812 300" role="img" aria-label="An example starch calibration graph: six crosses on a straight line rising from the origin, with a fitted line, its equation and an R squared of 0.999."><rect x="78" y="34" width="694" height="204" class="cplot"/><line x1="177.1" y1="34" x2="177.1" y2="238" class="cgrid"/><line x1="276.3" y1="34" x2="276.3" y2="238" class="cgrid"/><line x1="375.4" y1="34" x2="375.4" y2="238" class="cgrid"/><line x1="474.6" y1="34" x2="474.6" y2="238" class="cgrid"/><line x1="573.7" y1="34" x2="573.7" y2="238" class="cgrid"/><line x1="672.9" y1="34" x2="672.9" y2="238" class="cgrid"/><line x1="772.0" y1="34" x2="772.0" y2="238" class="cgrid"/><line x1="78" y1="208.9" x2="772" y2="208.9" class="cgrid"/><line x1="78" y1="179.7" x2="772" y2="179.7" class="cgrid"/><line x1="78" y1="150.6" x2="772" y2="150.6" class="cgrid"/><line x1="78" y1="121.4" x2="772" y2="121.4" class="cgrid"/><line x1="78" y1="92.3" x2="772" y2="92.3" class="cgrid"/><line x1="78" y1="63.1" x2="772" y2="63.1" class="cgrid"/><line x1="78" y1="34.0" x2="772" y2="34.0" class="cgrid"/><line x1="78" y1="34" x2="78" y2="238" class="cax"/><line x1="78" y1="238" x2="772" y2="238" class="cax"/><line x1="78.0" y1="238" x2="78.0" y2="242" class="cax"/><text x="78.0" y="255" text-anchor="middle" class="ctk">0.000</text><line x1="177.1" y1="238" x2="177.1" y2="242" class="cax"/><text x="177.1" y="255" text-anchor="middle" class="ctk">0.001</text><line x1="276.3" y1="238" x2="276.3" y2="242" class="cax"/><text x="276.3" y="255" text-anchor="middle" class="ctk">0.002</text><line x1="375.4" y1="238" x2="375.4" y2="242" class="cax"/><text x="375.4" y="255" text-anchor="middle" class="ctk">0.003</text><line x1="474.6" y1="238" x2="474.6" y2="242" class="cax"/><text x="474.6" y="255" text-anchor="middle" class="ctk">0.004</text><line x1="573.7" y1="238" x2="573.7" y2="242" class="cax"/><text x="573.7" y="255" text-anchor="middle" class="ctk">0.005</text><line x1="672.9" y1="238" x2="672.9" y2="242" class="cax"/><text x="672.9" y="255" text-anchor="middle" class="ctk">0.006</text><line x1="772.0" y1="238" x2="772.0" y2="242" class="cax"/><text x="772.0" y="255" text-anchor="middle" class="ctk">0.007</text><line x1="74" y1="238.0" x2="78" y2="238.0" class="cax"/><text x="69" y="241.4" text-anchor="end" class="ctk">0.0</text><line x1="74" y1="208.9" x2="78" y2="208.9" class="cax"/><text x="69" y="212.3" text-anchor="end" class="ctk">0.1</text><line x1="74" y1="179.7" x2="78" y2="179.7" class="cax"/><text x="69" y="183.1" text-anchor="end" class="ctk">0.2</text><line x1="74" y1="150.6" x2="78" y2="150.6" class="cax"/><text x="69" y="154.0" text-anchor="end" class="ctk">0.3</text><line x1="74" y1="121.4" x2="78" y2="121.4" class="cax"/><text x="69" y="124.8" text-anchor="end" class="ctk">0.4</text><line x1="74" y1="92.3" x2="78" y2="92.3" class="cax"/><text x="69" y="95.7" text-anchor="end" class="ctk">0.5</text><line x1="74" y1="63.1" x2="78" y2="63.1" class="cax"/><text x="69" y="66.5" text-anchor="end" class="ctk">0.6</text><line x1="74" y1="34.0" x2="78" y2="34.0" class="cax"/><text x="69" y="37.4" text-anchor="end" class="ctk">0.7</text><line x1="78.0" y1="238.5" x2="732.3" y2="35.8" class="cfit"/><path d="M73.4 233.4 L82.6 242.6 M73.4 242.6 L82.6 233.4" class="cx"/><path d="M172.5 201.9 L181.7 211.1 M172.5 211.1 L181.7 201.9" class="cx"/><path d="M271.7 175.4 L280.9 184.6 M271.7 184.6 L280.9 175.4" class="cx"/><path d="M370.8 139.9 L380.0 149.1 M370.8 149.1 L380.0 139.9" class="cx"/><path d="M470.0 112.7 L479.2 121.9 M470.0 121.9 L479.2 112.7" class="cx"/><path d="M668.3 48.6 L677.5 57.8 M668.3 57.8 L677.5 48.6" class="cx"/><text x="764" y="192" text-anchor="end" class="ceq">absorbance = 105.4 &#215; concentration</text><text x="764" y="214" text-anchor="end" class="ceq2">R&#178; = 0.999</text><text x="22" y="136" text-anchor="middle" transform="rotate(-90 22 136)" class="caxl">absorbance at 610 nm</text><text x="425" y="288" text-anchor="middle" class="caxl">starch concentration / %</text></svg>
+<p class="cap"><strong>An example of what the script draws</strong> &mdash; not your data. These are
+invented standards, at the concentrations from your worksheet. The line, the equation and the R&#178;
+all arrive together, so there is no trendline to add and no setting to hunt for.</p>
+</div>
+</div><div class="gate" id="gate1">
+  <p class="g-kicker">Still here?</p>
+  <p class="g-line">Get R onto a machine and run the ready-made script &mdash; on your own readings,
+  or on the test readings already sitting in the workbook if you have not done the practical yet.
+  Fifteen minutes, nothing to buy, and you find out whether you like it before learning any of it.</p>
+  <button class="g-btn" type="button" data-open="2">Show me it working &rarr;</button>
+  <p class="g-tiny">If you would rather stay in Excel, that is a perfectly good answer. Close the tab.</p>
+</div>
+<div class="tier" data-tier="2"><section id="get-r">
+<h2>Getting R</h2>
+<p>R is the language. RStudio is the window you write it in. You want both, <strong>in that order</strong> &mdash;
+RStudio is only a front end, and installed first it will open and complain it cannot find R.</p>
+
+<h3>Option A &mdash; nothing to install</h3>
+<p>Best if the school machines are locked down, or you want to try it in the next five minutes.</p>
+<div class="cards">
+  <a class="card" href="https://posit.cloud" target="_blank" rel="noopener">
+    <div class="k">Step 1 of 1</div>
+    <div class="t">Posit Cloud &rarr;</div>
+    <p class="d">Make a free account, then <strong>New Project &rarr; New RStudio Project</strong>. Twenty seconds
+    later you have RStudio in a browser tab. Skip to section 02.</p>
+    <div class="u">posit.cloud</div>
+  </a>
+</div>
+
+<h3>Option B &mdash; install it on your own machine</h3>
+<div class="cards">
+  <a class="card" href="https://cran.r-project.org/bin/macosx/" target="_blank" rel="noopener">
+    <div class="k">Install first</div>
+    <div class="t">R for macOS &rarr;</div>
+    <p class="d">Take the <code>.pkg</code> that matches your Mac: <strong>Apple silicon (arm64)</strong> for
+    M1&ndash;M4, <strong>Intel (x86_64)</strong> for anything older. Apple menu &rarr; About This Mac if unsure.</p>
+    <div class="u">cran.r-project.org/bin/macosx</div>
+  </a>
+  <a class="card" href="https://cran.r-project.org/bin/windows/base/" target="_blank" rel="noopener">
+    <div class="k">Install first</div>
+    <div class="t">R for Windows &rarr;</div>
+    <p class="d">One <code>.exe</code>. Download, run it, click through the defaults.</p>
+    <div class="u">cran.r-project.org/bin/windows/base</div>
+  </a>
+  <a class="card" href="https://posit.co/download/rstudio-desktop/" target="_blank" rel="noopener">
+    <div class="k">Install second</div>
+    <div class="t">RStudio Desktop &rarr;</div>
+    <p class="d">Scroll to the free version. Mac: drag it into Applications. Windows: run the installer.</p>
+    <div class="u">posit.co/download/rstudio-desktop</div>
+  </a>
+</div>
+<p>Open <strong>RStudio</strong>, not R. R on its own is a bare grey window and you do not want it.</p>
+</section>
+<section id="quick">
+<h2>The short route</h2>
+<p>If all you want is the graph, you do not have to type any of this.</p>
+<div class="note"><span class="lbl">You do not need your own readings yet</span>
+<p>The workbook already contains a full set of test readings on its <strong>Worked example</strong>
+tab. If you have not done the practical, or you just want to see the thing work tonight, open
+<code>starch_curve.R</code> and change one line near the top:</p>
+<p><code>SHEET &lt;- "Your data"</code> &nbsp;&rarr;&nbsp; <code>SHEET &lt;- "Worked example"</code></p>
+<p>Everything below then runs exactly the same. <strong>Change it back when you have your own
+numbers.</strong></p></div>
+<ol>
+  <li>Put <code>starch_curve.R</code> in the same folder as your workbook.</li>
+  <li>Fill in the <strong>Your data</strong> tab and <strong>save</strong> the workbook.</li>
+  <li>Double-click <code>starch_curve.R</code>. It opens in RStudio.</li>
+  <li>Press <strong>Source</strong> &mdash; top right of the editor, or <kbd>Cmd</kbd>+<kbd>Shift</kbd>+<kbd>Enter</kbd>.</li>
+</ol>
+<p>It reads your numbers straight out of the workbook, fits the line to the points you marked Y,
+prints the gradient, the intercept and R&#178;, saves the graph as a PNG, and works out your unknowns.</p>
+<div class="good"><span class="lbl">Why it can be trusted</span>
+<p>It reads only the cells you <strong>typed</strong> &mdash; volumes, absorbances, the Y/N column &mdash; and
+works everything else out from scratch. If it agrees with Excel, that is two independent
+calculations agreeing.</p></div>
+<div class="warn"><span class="lbl">But read the rest anyway</span>
+<p>That script is a black box, and a black box is not an education. Everything below is how it works.
+First, though, R has to be on the machine. That is section 01, and you only do it once.</p></div>
+</section>
+</div><div class="gate" id="gate2">
+  <p class="g-kicker">Liked it?</p>
+  <p class="g-line">Then stop running someone else's file and write your own &mdash; including the
+  parts you let an AI draft for you. Every line explained, from what an arrow means to why your
+  intercept should sit near zero.</p>
+  <button class="g-btn" type="button" data-open="3">Teach me the code &rarr;</button>
+  <p class="g-tiny">Where AI fits and how to reference it, then fifteen short steps and three
+  appendices. <strong>Nothing from here on assumes you have written a line of code before.</strong>
+  Copy any block with one click.</p>
+</div>
+<div class="tier" data-tier="3"><section id="with-ai">
+<h2>First, the honest shortcut</h2>
+<p>The reason most people never try R is not that the code is hard. It is that you can
+<em class="term">picture</em> the graph you want and have no idea what to type. That gap used to cost
+you a weekend of tutorials.</p>
+<p>It does not any more. <strong>Describe the figure you want to an AI and it will write the R for
+you.</strong> The map-and-charts figure at the top of this page is exactly the kind of thing you can
+now ask for in a sentence. So the question stops being &ldquo;can I code this?&rdquo; and becomes
+<strong>&ldquo;what do I actually want to see?&rdquo;</strong> &mdash; which is the better question,
+and the one this whole course is training you to ask.</p>
+<p>Use the shortcut. But be clear about what it changes: <strong>it changes how much you have to type,
+not how much you have to understand.</strong></p>
+
+<div class="vs">
+  <div class="x"><h4>Hand this over happily</h4>
+  <p>Colours, fonts, themes, axis labels, panel layout, saving the file, and decoding an error message
+  you have never seen before.</p>
+  <p><strong>None of it changes a number.</strong></p></div>
+  <div class="r"><h4>This has to be yours</h4>
+  <p>Which points go into the fit and why you left any out. What the gradient means. What R&#178; does
+  and does not tell you. Whether an unknown sits inside your range.</p>
+  <p><strong>Every one of those changes a number, or a conclusion.</strong></p></div>
+</div>
+<p>That is the whole boundary, and it is easier than it sounds: <strong>a line that changes a number,
+or a line that changes a look.</strong> Be able to say out loud why every line in the first group is
+there. Nobody will ever ask you to defend a colour.</p>
+
+<div class="note"><span class="lbl">So do I have to reference it?</span>
+<p><strong>Asking how is not the same as being given the answer.</strong> Reading the documentation,
+watching a tutorial, or asking an AI what <code>facet_wrap()</code> does is learning a
+<em class="term">technique</em> &mdash; you no more reference that than you reference learning
+<code>=AVERAGE()</code> from a video.</p>
+<p>Typing a prompt and pasting the output into your work is receiving a <em class="term">product</em>.
+The IB's rule for that is specific: it must be credited <strong>in the body of your text and in your
+bibliography</strong>, and the citation must include <strong>the prompt you typed and the
+date</strong>.</p>
+<p><strong>Technique or product &mdash; that is the test.</strong> When you genuinely cannot tell,
+cite it. A citation has never cost anyone a mark. An uncredited generation is academic misconduct, and
+that is a much worse afternoon.</p>
+<p class="tiny">This is the IB's published position, and it is not a ban &mdash; the IB has said it
+will not ban AI tools. Your own school may set stricter rules, so check those too.</p></div>
+
+<div class="good"><span class="lbl">And this is the bit Excel cannot answer</span>
+<p><strong>A picture an AI draws for you is not repeatable. A script an AI writes for you is.</strong>
+Anyone can run it and get your figure back &mdash; you in six months, your teacher, an examiner asking
+how you arrived at that number.</p>
+<p>Excel does its working under the hood, one hidden cell at a time. <strong>R leaves the
+receipt.</strong> That, more than anything else on this page, is why a script is worth having.</p></div>
+
+<p>Which brings us to the rest of this guide. You can let something else write the first draft &mdash;
+but only if you can read it. <strong>So let us make the code below stop being someone else's.</strong></p>
+</section>
+<section id="rstudio">
+<h2><span class="num">01</span>What you are looking at</h2>
+<p>RStudio shows four panels. You need two of them.</p>
+<div class="tw"><table>
+<tr><th>Panel</th><th>Where</th><th>What it is</th></tr>
+<tr><td><strong>Console</strong></td><td>bottom left</td><td>Where R runs things. Type, press Enter, it happens. Nothing here is saved.</td></tr>
+<tr><td><strong>Script editor</strong></td><td>top left</td><td>A file of instructions. <strong>This is where you work.</strong> It gets saved.</td></tr>
+<tr><td>Environment</td><td>top right</td><td>Everything R is currently holding in memory.</td></tr>
+<tr><td>Files / Plots</td><td>bottom right</td><td>Your graphs appear here.</td></tr>
+</table></div>
+<p>No top-left panel? <strong>File &rarr; New File &rarr; R Script</strong>. Save it straight away as
+<code>starch_curve.R</code>.</p>
+<div class="note"><span class="lbl">Running your code</span>
+<p><strong>One line:</strong> put the cursor on it, press <kbd>Cmd</kbd>+<kbd>Enter</kbd> (Mac) or
+<kbd>Ctrl</kbd>+<kbd>Enter</kbd> (Windows). <strong>The whole script:</strong> add <kbd>Shift</kbd>.
+Work in the script, not the console &mdash; if it is not in the script, it did not happen.</p></div>
+</section>
+<section id="packages">
+<h2><span class="num">02</span>Install the tidyverse, once ever</h2>
+<p>The tidyverse is a bundle of add-on packages for handling data and drawing graphs. Type this
+<strong>in the Console</strong> &mdash; once per machine, not in your script.</p>
+<div class="code" data-lang="Console — once per machine"><pre><code class="language-r">install.packages("tidyverse")</code></pre></div>
+<p>It scrolls several hundred lines for a few minutes. That is normal. Wait for the <code>&gt;</code>
+prompt to come back. Then put this at the <strong>top of your script</strong>:</p>
+<div class="code" data-lang="Top of every script"><pre><code class="language-r"># installs the tidyverse if it is not already there, then loads it
+if (!requireNamespace("tidyverse", quietly = TRUE)) install.packages("tidyverse")
+library(tidyverse)</code></pre></div>
+<p><code>install.packages()</code> downloads it onto the computer &mdash; <strong>once, ever</strong>.
+<code>library()</code> switches it on &mdash; <strong>every time you open RStudio</strong>. Buying the
+textbook versus taking it off the shelf.</p>
+<div class="note"><span class="lbl">Why the extra first line</span>
+<p>That <code>requireNamespace</code> line is a <strong>safety net</strong>. It asks &ldquo;is this
+package already here?&rdquo; and installs it only if the answer is no. It costs nothing when the
+package is present, and it means your script still runs on a machine where you never typed the Console
+command &mdash; a school computer, a friend's laptop, or your own after a reinstall.</p>
+<p><strong>Every code block on this page that needs a package starts with a line like it</strong>, so
+anything you copy from here will run on its own.</p></div>
+<div class="note"><span class="lbl">Not an error</span>
+<p>A red block about &ldquo;conflicts&rdquo; with <code>filter</code> and <code>lag</code> is R telling you
+which names have been taken over. Carry on.</p></div>
+</section>
+<section id="vocab">
+<h2><span class="num">03</span>Four pieces of vocabulary</h2>
+<p><em class="term">A function is a verb with brackets.</em> <code>mean(c(2, 4, 6))</code> gives 4.</p>
+<p><em class="term">The arrow means &ldquo;put this in a box called&rdquo;.</em> <code>x &lt;- 5</code> makes a box
+named <code>x</code> holding 5. Type <code>x</code> afterwards and R shows you what is in it.</p>
+<p><em class="term">A data frame is a table.</em> Rows are tubes, columns are variables.
+<code>std$concentration</code> means &ldquo;the concentration column of the table <code>std</code>&rdquo;.</p>
+<p><em class="term">The pipe means &ldquo;and then&rdquo;.</em> These do the same thing:</p>
+<div class="code" data-lang="R"><pre><code class="language-r">mean(c(2, 4, 6))
+c(2, 4, 6) |&gt; mean()</code></pre></div>
+<p>It matters when you are doing four things in a row: you read left to right instead of unwrapping
+brackets from the inside out. Older tutorials write <code>%&gt;%</code>; both work.</p>
+<div class="warn"><span class="lbl">Two rules that catch everyone</span>
+<p>R is <strong>case sensitive</strong> &mdash; <code>Mean</code> is not <code>mean</code>. And text always needs
+<strong>quote marks</strong> &mdash; <code>"Standard 1"</code> is text, <code>Standard 1</code> is an error.</p></div>
+</section>
+<section id="data">
+<h2><span class="num">04</span>Get your numbers in</h2>
+<div class="warn"><span class="lbl">Read this before you type anything</span>
+<p>The six rows below are from <strong>the old version of this practical</strong> &mdash; 1&#8201;%
+starch, standards from 0.05&#8201;% up to 1.00&#8201;%. They are kept here <strong>deliberately</strong>,
+because they <em class="term">bend</em>: the top two points flatten off instead of continuing the line.
+Learning to spot that and leave those points out of the fit is the entire skill this section teaches,
+and perfectly straight data would teach you nothing.</p>
+<p><strong>Your own worksheet uses 0.01&#8201;% starch</strong> and much smaller standards, and should
+give you a straight line the whole way. Work through this section with the numbers below first, then
+run <code>starch_curve.R</code> on your own data &mdash; it reads them straight out of the
+workbook.</p></div>
+<h3>Type them &mdash; recommended, it is six rows</h3>
+<div class="code" data-lang="R — replace every number with your own"><pre><code class="language-r"># installs the tidyverse if it is not already there, then loads it
+if (!requireNamespace("tidyverse", quietly = TRUE)) install.packages("tidyverse")
+library(tidyverse)
+
+std_raw &lt;- tribble(
+  ~tube,        ~stock_cm3, ~water_cm3, ~abs1,  ~abs2,  ~abs3,
+  "Blank",             0.0,       10.0, 0.000,  0.002,  0.001,
+  "Standard 1",        0.5,        9.5, 0.190,  0.201,  0.197,
+  "Standard 2",        1.0,        9.0, 0.399,  0.414,  0.408,
+  "Standard 3",        2.0,        8.0, 0.766,  0.785,  0.774,
+  "Standard 4",        5.0,        5.0, 1.388,  1.421,  1.397,
+  "Standard 5",       10.0,        0.0, 1.611,  1.658,  1.645
+)</code></pre></div>
+<p>Keep the layout exactly: <code>~name</code> marks a column heading, commas between everything,
+text in quotes, numbers not.</p>
+
+<h3>Or read a spreadsheet</h3>
+<div class="code" data-lang="R"><pre><code class="language-r">std_raw &lt;- read_csv("my_starch_data.csv")   # whatever you named it</code></pre></div>
+<div class="warn"><span class="lbl">The commonest R error of all</span>
+<p><code>Error: 'x.csv' does not exist in current working directory.</code> R is looking in the wrong
+folder. Save your script into the same folder as the file, then
+<strong>Session &rarr; Set Working Directory &rarr; To Source File Location</strong>.</p></div>
+<p>Either way, look at what you loaded before you touch it:</p>
+<div class="code" data-lang="R"><pre><code class="language-r">std_raw
+glimpse(std_raw)</code></pre></div>
+<p><code>glimpse()</code> shows column names and types. A column that should hold numbers but says
+<code>&lt;chr&gt;</code> has a stray letter or space in it. Fix that now, not later.</p>
+</section>
+<section id="conc">
+<h2><span class="num">05</span>Work out the concentrations</h2>
+<div class="code" data-lang="R"><pre><code class="language-r">std_raw &lt;- std_raw |&gt;
+  mutate(concentration = 1 * stock_cm3 / (stock_cm3 + water_cm3))</code></pre></div>
+<p><code>mutate()</code> adds a column. Read it as: take <code>std_raw</code>, <strong>and then</strong> add a
+column called <code>concentration</code> equal to stock % &times; volume of stock &divide; total volume.
+Check one against your head. If R disagrees with you, one of you is wrong and you need to know which.</p>
+</section>
+<section id="mean">
+<h2><span class="num">06</span>Average the three repeats</h2>
+<p>Your trials sit in three separate columns. R wants them in one column before it can average them.
+This is going from <strong>wide</strong> to <strong>long</strong>, and it is the one genuinely new idea here.</p>
+<div class="code" data-lang="R"><pre><code class="language-r">std &lt;- std_raw |&gt;
+  pivot_longer(cols      = c(abs1, abs2, abs3),
+               names_to  = "trial",
+               values_to = "absorbance") |&gt;
+  group_by(tube, concentration) |&gt;
+  summarise(mean_abs = mean(absorbance),
+            unc      = (max(absorbance) - min(absorbance)) / 2,
+            .groups  = "drop") |&gt;
+  arrange(concentration)
+
+std</code></pre></div>
+<ul>
+  <li><code>pivot_longer()</code> stacks the three absorbance columns into one. Six rows become eighteen;
+  each row is now <em>one reading</em>.</li>
+  <li><code>group_by()</code> deals with each tube separately.</li>
+  <li><code>summarise()</code> collapses each group to one row: the mean of its readings, and half the
+  range as your uncertainty.</li>
+  <li><code>arrange()</code> sorts low to high.</li>
+</ul>
+<div class="code out" data-lang="What you should see"><pre><code>  tube       concentration mean_abs     unc
+1 Blank               0       0.001 0.001
+2 Standard 1          0.05    0.196 0.0055
+3 Standard 2          0.1     0.407 0.0075
+4 Standard 3          0.2     0.775 0.0095
+5 Standard 4          0.5     1.402 0.0165
+6 Standard 5          1       1.638 0.0235</code></pre></div>
+</section>
+<section id="plot1">
+<h2><span class="num">07</span>Draw the points first</h2>
+<div class="code" data-lang="R"><pre><code class="language-r">ggplot(std, aes(x = concentration, y = mean_abs)) +
+  geom_point(size = 3) +
+  geom_errorbar(aes(ymin = mean_abs - unc, ymax = mean_abs + unc), width = 0.02) +
+  labs(x = "Starch concentration / %",
+       y = "Absorbance (mean of 3)",
+       title = "Every standard") +
+  theme_minimal()</code></pre></div>
+<p>A ggplot is built in layers. <code>ggplot(data, aes(...))</code> says which table and which column is
+x and which is y. Each <code>geom_</code> draws a layer on top. <code>labs()</code> sets the axis labels
+&mdash; <strong>always with units</strong>. <code>theme_minimal()</code> stops it looking like a grey 2009 spreadsheet.</p>
+<div class="warn"><span class="lbl">Where the plus sign goes</span>
+<p>At the <strong>end</strong> of a line, never the start. At the start, R thinks the previous line was
+finished and everything breaks.</p></div>
+</section>
+<section id="choose">
+<h2><span class="num">08</span>Choose which points the line uses</h2>
+<p>R fits a line to whatever you hand it, so you have to hand it the right rows. Same decision as
+column K in the workbook.</p>
+<p>One line shows you where the points stop lying on a straight line through the origin. On a straight
+line, absorbance &divide; concentration is constant:</p>
+<div class="code" data-lang="R"><pre><code class="language-r">std |&gt; mutate(ratio = mean_abs / concentration)</code></pre></div>
+<div class="code out" data-lang="Output"><pre><code>  tube        concentration mean_abs  ratio
+1 Blank                0       0.001  Inf     &lt;- 0 divided by 0, ignore
+2 Standard 1           0.05    0.196  3.92    |
+3 Standard 2           0.10    0.407  4.07    |  roughly constant
+4 Standard 3           0.20    0.775  3.88    |
+5 Standard 4           0.50    1.402  2.80    &lt;- falling away
+6 Standard 5           1.00    1.638  1.64    &lt;-</code></pre></div>
+<p>3.92, 4.07, 3.88 &mdash; constant within your scatter. Then 2.80 and 1.64. Cut it at 0.20%.</p>
+<div class="code" data-lang="R — change 0.20 to suit your own data"><pre><code class="language-r">straight &lt;- filter(std, concentration &lt;= 0.20)
+straight</code></pre></div>
+<div class="note"><span class="lbl">Two rules</span>
+<p>If your points never bend, use all of them: <code>straight &lt;- std</code>. And
+<strong>never fit fewer than three points</strong> &mdash; two points always give R&#178; = 1, because a
+line through two points is exact. That 1 means nothing.</p></div>
+<div class="warn"><span class="lbl">If every point is bent</span>
+<p>If absorbance barely moves however much starch you add, stop. That is not a curve you can fit, it is
+an instrument that has run out of light. Your standards are too concentrated. The
+<strong>Why the graph flattens</strong> tab of the workbook explains it and gives the dilution that fixes it.</p></div>
+</section>
+<section id="fit">
+<h2><span class="num">09</span>Fit the line</h2>
+<div class="code" data-lang="R"><pre><code class="language-r">fit &lt;- lm(mean_abs ~ concentration, data = straight)
+summary(fit)</code></pre></div>
+<p><code>lm</code> is <em>linear model</em>. Read <code>mean_abs ~ concentration</code> as &ldquo;absorbance
+<strong>explained by</strong> concentration&rdquo; &mdash; y on the left of the tilde, x on the right.
+<code>data = straight</code> is the part that matters: <strong>the filtered rows, not all of them</strong>.</p>
+<div class="code out" data-lang="The three numbers you need"><pre><code>Coefficients:
+              Estimate Std. Error t value Pr(&gt;|t|)
+(Intercept)   0.005400   0.008775   0.615  0.60101
+concentration 3.878286   0.076597  50.632  0.00039 ***
+
+Multiple R-squared:  0.9992,	Adjusted R-squared:  0.9988</code></pre></div>
+<ul>
+  <li><strong>concentration Estimate = 3.878</strong> &mdash; the gradient.</li>
+  <li><strong>(Intercept) Estimate = 0.0054</strong> &mdash; where the line crosses at zero.</li>
+  <li><strong>Multiple R-squared = 0.9992</strong> &mdash; your R&#178;.</li>
+</ul>
+<p>Pull them into named boxes so you can use them:</p>
+<div class="code" data-lang="R"><pre><code class="language-r">intercept &lt;- coef(fit)[["(Intercept)"]]
+slope     &lt;- coef(fit)[["concentration"]]
+r2        &lt;- summary(fit)$r.squared
+
+cat(sprintf("absorbance = %.3f x concentration + %.3f,  R2 = %.4f\n", slope, intercept, r2))</code></pre></div>
+<p>These are the same three numbers as <code>=SLOPE()</code>, <code>=INTERCEPT()</code> and
+<code>=RSQ()</code> in the workbook. Check that they agree.</p>
+</section>
+<section id="r2">
+<h2><span class="num">10</span>What R&#178; actually tells you</h2>
+<p>R&#178; is the fraction of the variation in absorbance that your line accounts for. It only ever
+describes <strong>the points you fitted</strong>. It says nothing about the ones you excluded, and nothing
+about whether excluding them was the right call. That judgement is yours and you defend it in words.</p>
+<div class="tw"><table>
+<tr><th>What you see</th><th>What it means</th><th>What to write</th></tr>
+<tr><td>Points scattered evenly either side</td><td><strong>Random error</strong> &mdash; inconsistent pipetting, cuvette not wiped, drop volume varying</td><td>Repeat and average; pipette the iodine instead of dropping it</td></tr>
+<tr><td>Points curve away at the top</td><td><strong>Wrong model</strong> &mdash; you included the plateau</td><td>Restrict the fit and say where the straight region ends</td></tr>
+</table></div>
+<div class="warn"><span class="lbl">The trap</span>
+<p>A high R&#178; across a flat part of the curve is <strong>worse</strong> than a low one. It hides the fact
+that the method cannot tell those concentrations apart.</p></div>
+<p>Check your intercept too. It should sit near zero, because you zeroed on the blank. If it does not,
+suspect a <strong>systematic error</strong> &mdash; most likely a blank with no iodine in it. Every reading is then
+shifted the same way, and repeating the experiment will never reveal it.</p>
+</section>
+<section id="plot2">
+<h2><span class="num">11</span>Put the line on the graph</h2>
+<div class="code" data-lang="R"><pre><code class="language-r">ggplot(std, aes(x = concentration, y = mean_abs)) +
+  geom_errorbar(aes(ymin = mean_abs - unc, ymax = mean_abs + unc),
+                width = 0.02, colour = "grey50") +
+  geom_point(size = 3, colour = "grey60") +
+  geom_point(data = straight, size = 3, colour = "#2E7D8F") +
+  geom_smooth(data = straight, method = "lm", se = FALSE,
+              colour = "#A93226", linewidth = 0.7) +
+  annotate("text", x = 0.30, y = 0.25, hjust = 0,
+           label = sprintf("absorbance = %.3f x concentration + %.3f\nR2 = %.4f",
+                           slope, intercept, r2)) +
+  labs(title = "Starch calibration curve",
+       x = "Starch concentration / %",
+       y = "Absorbance (mean of 3)") +
+  theme_minimal(base_size = 12)</code></pre></div>
+<p>The layers, in order: error bars, then <strong>all</strong> points in grey, then the fitted points again in
+teal on top, then the line, then the equation. Drawing the excluded points in grey shows the reader
+everything you measured and what you chose to fit &mdash; which is what an honest graph does.</p>
+<ul>
+  <li><code>se = FALSE</code> turns off the pale grey band ggplot likes to draw around the line. That
+  band means something specific in statistics that you have not been taught yet, so do not put it on a
+  graph you have to defend.</li>
+  <li>The line stops at your last fitted point. <strong>Leave it there.</strong>
+  <code>fullrange = TRUE</code> would stretch it across the whole plot &mdash; that is
+  <strong>extrapolation</strong>, claiming to know what happens beyond the range you actually measured,
+  drawn in ink.</li>
+</ul>
+</section>
+<section id="unknown">
+<h2><span class="num">12</span>Read an unknown off the line</h2>
+<p>Rearranging <code>absorbance = slope &times; concentration + intercept</code>:</p>
+<div class="code" data-lang="R"><pre><code class="language-r">read_off &lt;- function(absorbance, dilution = 1) {
+  (absorbance - intercept) / slope * dilution
+}
+
+unknown_A &lt;- mean(c(1.548, 1.562, 1.551))
+read_off(unknown_A)     # 0.3992...</code></pre></div>
+<p>You have just written a function. Now check whether that number is allowed:</p>
+<div class="code" data-lang="R"><pre><code class="language-r">max_abs_on_line &lt;- max(straight$mean_abs)   # 0.775
+unknown_A &gt; max_abs_on_line                 # TRUE  -&gt; outside the fitted range</code></pre></div>
+<div class="warn"><span class="lbl">Getting a number is not permission to use it</span>
+<p>R hands you an answer either way. Make it say so out loud:</p></div>
+<div class="code" data-lang="R"><pre><code class="language-r">check &lt;- function(absorbance) {
+  if (absorbance &gt; max_abs_on_line) {
+    "NO - above the fitted range. Dilute it and read again."
+  } else if (absorbance &lt; 0.05) {
+    "NO - too faint for the colorimeter to resolve."
+  } else {
+    "Yes - inside the fitted range."
+  }
+}
+
+check(unknown_A)</code></pre></div>
+<p>So dilute &mdash; 1 cm&#179; of unknown into 9 cm&#179; of distilled water, a factor of 10 &mdash; and read again:</p>
+<div class="code" data-lang="R"><pre><code class="language-r">unknown_A_dil &lt;- mean(c(0.318, 0.325, 0.321))
+check(unknown_A_dil)          # inside the range
+read_off(unknown_A_dil, 10)   # 0.8146...</code></pre></div>
+<p><strong>0.81%.</strong> Round it. Multiplying by 10 multiplies the uncertainty by 10 too, so
+<code>0.8146</code> claims a precision you do not have.</p>
+</section>
+<section id="save">
+<h2><span class="num">13</span>Save the graph</h2>
+<div class="code" data-lang="R"><pre><code class="language-r">ggsave("calibration_curve.png", width = 16, height = 10, units = "cm", dpi = 300)</code></pre></div>
+<p>Saves the last plot you drew, into your working directory, at print resolution.</p>
+</section>
+<section id="whole">
+<h2><span class="num">14</span>The whole thing, in one block</h2>
+<p>Copy this into a fresh script. Replace the numbers in <code>tribble()</code> and the
+<code>0.20</code> in <code>filter()</code>. Run it top to bottom.</p>
+<div class="code" data-lang="R — the complete script"><pre><code class="language-r"># Starch calibration curve --------------------------------------------------
+# Installs the tidyverse if this machine does not have it yet, then loads it.
+if (!requireNamespace("tidyverse", quietly = TRUE)) install.packages("tidyverse")
+library(tidyverse)
+
+# 1. YOUR DATA - replace every number below with your own -------------------
+std_raw &lt;- tribble(
+  ~tube,        ~stock_cm3, ~water_cm3, ~abs1,  ~abs2,  ~abs3,
+  "Blank",             0.0,       10.0, 0.000,  0.002,  0.001,
+  "Standard 1",        0.5,        9.5, 0.190,  0.201,  0.197,
+  "Standard 2",        1.0,        9.0, 0.399,  0.414,  0.408,
+  "Standard 3",        2.0,        8.0, 0.766,  0.785,  0.774,
+  "Standard 4",        5.0,        5.0, 1.388,  1.421,  1.397,
+  "Standard 5",       10.0,        0.0, 1.611,  1.658,  1.645
+)
+
+# 2. Concentrations, and the mean of the three repeats ----------------------
+std &lt;- std_raw |&gt;
+  mutate(concentration = 1 * stock_cm3 / (stock_cm3 + water_cm3)) |&gt;
+  pivot_longer(c(abs1, abs2, abs3), names_to = "trial", values_to = "absorbance") |&gt;
+  group_by(tube, concentration) |&gt;
+  summarise(mean_abs = mean(absorbance),
+            unc      = (max(absorbance) - min(absorbance)) / 2,
+            .groups  = "drop") |&gt;
+  arrange(concentration)
+
+# 3. Where do the points stop lying on a straight line? ---------------------
+std |&gt; mutate(ratio = mean_abs / concentration)
+
+# 4. YOUR DECISION - change 0.20 to suit your own data ----------------------
+straight &lt;- filter(std, concentration &lt;= 0.20)
+
+# 5. Fit the line to those rows only ----------------------------------------
+fit       &lt;- lm(mean_abs ~ concentration, data = straight)
+intercept &lt;- coef(fit)[["(Intercept)"]]
+slope     &lt;- coef(fit)[["concentration"]]
+r2        &lt;- summary(fit)$r.squared
+cat(sprintf("absorbance = %.3f x conc + %.3f,  R2 = %.4f,  %d points\n",
+            slope, intercept, r2, nrow(straight)))
+
+# 6. The graph --------------------------------------------------------------
+ggplot(std, aes(concentration, mean_abs)) +
+  geom_errorbar(aes(ymin = mean_abs - unc, ymax = mean_abs + unc),
+                width = 0.02, colour = "grey50") +
+  geom_point(size = 3, colour = "grey60") +
+  geom_point(data = straight, size = 3, colour = "#2E7D8F") +
+  geom_smooth(data = straight, method = "lm", se = FALSE,
+              colour = "#A93226", linewidth = 0.7) +
+  annotate("text", x = max(std$concentration) * 0.45, y = max(std$mean_abs) * 0.2,
+           hjust = 0,
+           label = sprintf("absorbance = %.3f x concentration + %.3f\nR2 = %.4f",
+                           slope, intercept, r2)) +
+  labs(title = "Starch calibration curve",
+       subtitle = "Line fitted to the teal points only",
+       x = "Starch concentration / %",
+       y = "Absorbance (mean of 3)") +
+  theme_minimal(base_size = 12)
+
+ggsave("calibration_curve.png", width = 16, height = 10, units = "cm", dpi = 300)
+
+# 7. Unknowns ---------------------------------------------------------------
+max_abs_on_line &lt;- max(straight$mean_abs)
+
+read_off &lt;- function(absorbance, dilution = 1) (absorbance - intercept) / slope * dilution
+
+check &lt;- function(absorbance) {
+  if (absorbance &gt; max_abs_on_line)      "NO - above the fitted range. Dilute and read again."
+  else if (absorbance &lt; 0.05)            "NO - too faint for the colorimeter to resolve."
+  else                                   "Yes - inside the fitted range."
+}
+
+unknown_A     &lt;- mean(c(1.548, 1.562, 1.551))
+unknown_A_dil &lt;- mean(c(0.318, 0.325, 0.321))
+unknown_B     &lt;- mean(c(0.509, 0.518, 0.512))
+
+check(unknown_A)                 # too high
+check(unknown_A_dil)             # fine
+read_off(unknown_A_dil, 10)      # 0.81 %
+check(unknown_B)                 # fine
+read_off(unknown_B)              # 0.13 %</code></pre></div>
+</section>
+<section id="errors">
+<h2><span class="num">15</span>When it breaks</h2>
+<div class="tw"><table>
+<tr><th>Message</th><th>What it means</th><th>Fix</th></tr>
+<tr><td><code>could not find function "ggplot"</code></td><td>Package not switched on</td><td><code>library(tidyverse)</code> at the top</td></tr>
+<tr><td><code>there is no package called 'tidyverse'</code></td><td>Never installed</td><td><code>install.packages("tidyverse")</code> in the Console</td></tr>
+<tr><td><code>object 'std' not found</code></td><td>You ran a later line before an earlier one</td><td>Run the script from the top</td></tr>
+<tr><td><code>does not exist in current working directory</code></td><td>R is in the wrong folder</td><td>Session &rarr; Set Working Directory &rarr; To Source File Location</td></tr>
+<tr><td>Console shows <code>+</code> and will not respond</td><td>Unclosed bracket or quote</td><td>Press <kbd>Esc</kbd>, find the missing <code>)</code> or <code>"</code></td></tr>
+<tr><td><code>object 'Concentration' not found</code></td><td>Capital letter</td><td>R is case sensitive</td></tr>
+<tr><td><code>unexpected symbol</code></td><td>Missing comma, or a <code>+</code> at the start of a line</td><td>Look at the line <em>above</em> the one named</td></tr>
+<tr><td>Graph empty or blank</td><td>A column is text, not numbers</td><td><code>glimpse(std)</code> &mdash; anything <code>&lt;chr&gt;</code> that should be <code>&lt;dbl&gt;</code>?</td></tr>
+</table></div>
+<p>Two habits prevent most of this: run your script <strong>from the top</strong> every time, and read the
+error message properly &mdash; R almost always names the line and the object it choked on.</p>
+</section>
+<section id="appendix-a">
+<h2><span class="num">A</span>The same thing without the tidyverse</h2>
+<p>Base R alone, no packages, if a machine will not install anything.</p>
+<div class="code" data-lang="R — base only"><pre><code class="language-r">conc &lt;- c(0.00, 0.05, 0.10, 0.20, 0.50, 1.00)
+abs  &lt;- c(0.001, 0.196, 0.407, 0.775, 1.402, 1.638)
+
+keep &lt;- conc &lt;= 0.20                    # TRUE for the rows you want
+fit  &lt;- lm(abs[keep] ~ conc[keep])
+summary(fit)
+
+plot(conc, abs, pch = 16, col = "grey60",
+     xlab = "Starch concentration / %", ylab = "Absorbance")
+points(conc[keep], abs[keep], pch = 16, col = "steelblue")
+abline(fit, col = "firebrick", lwd = 2)</code></pre></div>
+<p>Fewer lines, uglier graph, identical numbers.</p>
+</section>
+<section id="appendix-b">
+<h2><span class="num">B</span>Five minutes worth a paragraph</h2>
+<p>Fit the line to different numbers of points and watch what happens.</p>
+<div class="code" data-lang="R"><pre><code class="language-r">conc &lt;- c(0.00, 0.05, 0.10, 0.20, 0.50, 1.00)
+abs  &lt;- c(0.001, 0.196, 0.407, 0.775, 1.402, 1.638)
+
+for (cut in c(0.10, 0.20, 0.50, 1.00)) {
+  keep &lt;- conc &lt;= cut
+  f    &lt;- lm(abs[keep] ~ conc[keep])
+  cat(sprintf("up to %.2f%%: R2 = %.4f, gradient = %.3f\n",
+              cut, summary(f)$r.squared, coef(f)[[2]]))
+}</code></pre></div>
+<div class="code out" data-lang="Output"><pre><code>up to 0.10%: R2 = 0.9995, gradient = 4.060
+up to 0.20%: R2 = 0.9992, gradient = 3.878
+up to 0.50%: R2 = 0.9731, gradient = 2.745
+up to 1.00%: R2 = 0.8679, gradient = 1.615</code></pre></div>
+<p>Watch the gradient collapse as you drag more of the bend into the fit. That output is worth a
+paragraph in anyone's evaluation.</p>
+</section>
+<section id="appendix-c">
+<h2><span class="num">C</span>r and R&#178; are not the same thing</h2>
+<div class="tw"><table>
+<tr><th></th><th>r &mdash; correlation coefficient</th><th>R&#178; &mdash; coefficient of determination</th></tr>
+<tr><td>Question it answers</td><td>Do these two things move together, and which way?</td><td>How much of the variation does my line account for?</td></tr>
+<tr><td>Range</td><td>&minus;1 to +1</td><td>0 to 1</td></tr>
+<tr><td>Sign</td><td>Yes &mdash; it gives direction</td><td>No</td></tr>
+<tr><td>Use it when</td><td>You measured two things and controlled neither</td><td>You fitted a line and want to judge it</td></tr>
+<tr><td>In R</td><td><code>cor(x, y)</code></td><td><code>summary(fit)$r.squared</code></td></tr>
+<tr><td>In Excel</td><td><code>=PEARSON(y, x)</code></td><td><code>=RSQ(y, x)</code></td></tr>
+</table></div>
+<p>For a straight-line fit of one x against one y, <strong>R&#178; is exactly r squared</strong>. So r = &minus;0.95
+and r = +0.95 both give R&#178; = 0.90.</p>
+<div class="good"><span class="lbl">Which one for this practical</span>
+<p>A calibration curve is a fitted line, so <strong>R&#178; is the one you want</strong>. Reporting r here is not
+wrong so much as answering a question nobody asked.</p></div>
+</section>
+</div>
+<footer>
+<p>Companion to <strong>Starch calibration curve.xlsx</strong> and <strong>starch_curve.R</strong>.
+IB Biology B1.1 &middot; Tool 2, Tool 3 and Inquiry 2.</p>
+<p style="margin-top:10px">Written by <strong>Dr Daniel Mompel Riera</strong>. Free to use and adapt with credit (<a href="https://creativecommons.org/licenses/by/4.0/">CC&nbsp;BY&nbsp;4.0</a>).</p>
+</footer>
+</main>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/r.min.js"></script>
+<script>
+(function () {
+  // syntax highlighting is a bonus; the page is fully readable without it
+  if (window.hljs) {
+    document.querySelectorAll('pre code.language-r').forEach(function (el) {
+      try { hljs.highlightElement(el); } catch (e) {}
+    });
+  }
+
+  // a labelled bar with a copy button on every code block
+  document.querySelectorAll('.code').forEach(function (box) {
+    var bar = document.createElement('div');
+    bar.className = 'bar';
+    var tag = document.createElement('span');
+    tag.className = 'tag';
+    tag.textContent = box.dataset.lang || 'R';
+    var btn = document.createElement('button');
+    btn.className = 'copy';
+    btn.type = 'button';
+    btn.textContent = 'Copy';
+    btn.addEventListener('click', function () {
+      var text = box.querySelector('pre').innerText;
+      var done = function () {
+        btn.textContent = 'Copied';
+        btn.classList.add('done');
+        setTimeout(function () { btn.textContent = 'Copy'; btn.classList.remove('done'); }, 1600);
+      };
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(done, function () { fallback(text, done); });
+      } else { fallback(text, done); }
+    });
+    function fallback(text, done) {
+      var ta = document.createElement('textarea');
+      ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0';
+      document.body.appendChild(ta); ta.select();
+      try { document.execCommand('copy'); done(); } catch (e) { btn.textContent = 'Select and copy'; }
+      document.body.removeChild(ta);
+    }
+    bar.appendChild(tag); bar.appendChild(btn);
+    box.insertBefore(bar, box.firstChild);
+  });
+
+  // ---- progressive reveal: show a little, then more on request ------------
+  var toc = document.getElementById('toc');
+  var tiers = {};
+  document.querySelectorAll('.tier').forEach(function (t) { tiers[t.dataset.tier] = t; });
+  var gate1 = document.getElementById('gate1');
+  var gate2 = document.getElementById('gate2');
+  var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  // hidden by JS, not by markup - with scripting off the whole guide is simply there
+  if (tiers['2'] && tiers['3']) {
+    tiers['2'].hidden = true;
+    tiers['3'].hidden = true;
+    gate2.hidden = true;
+  }
+
+  var spy = null;
+  function buildRail() {
+    toc.innerHTML = '';
+    var vis = Array.prototype.slice.call(document.querySelectorAll('main section'))
+      .filter(function (sec) {
+        var t = sec.closest('.tier');
+        return !t || !t.hidden;
+      });
+    vis.forEach(function (sec) {
+      var h = sec.querySelector('h2');
+      if (!h) return;                       // sections with no heading stay out of the rail
+      var numEl = h.querySelector('.num');
+      var num = numEl ? numEl.textContent.trim() : '';
+      var li = document.createElement('li');
+      var a = document.createElement('a');
+      a.href = '#' + sec.id;
+      a.textContent = (num ? num + '  ' : '') + h.textContent.replace(num, '').trim();
+      if (sec.id === 'appendix-a') li.className = 'grp';
+      li.appendChild(a);
+      toc.appendChild(li);
+    });
+    var railEl = document.querySelector('nav.rail');
+    if (railEl) railEl.classList.toggle('hide', vis.length < 3);
+    if (spy) spy.disconnect();
+    if ('IntersectionObserver' in window) {
+      var links = {};
+      toc.querySelectorAll('a').forEach(function (a) {
+        links[a.getAttribute('href').slice(1)] = a;
+      });
+      spy = new IntersectionObserver(function (entries) {
+        entries.forEach(function (e) {
+          if (!e.isIntersecting) return;
+          Object.keys(links).forEach(function (k) { links[k].classList.remove('on'); });
+          if (links[e.target.id]) links[e.target.id].classList.add('on');
+        });
+      }, { rootMargin: '-10% 0px -75% 0px' });
+      vis.forEach(function (sec) { spy.observe(sec); });
+    }
+  }
+
+  document.querySelectorAll('.g-btn').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      var n = btn.dataset.open;
+      tiers[n].hidden = false;
+      (n === '2' ? gate1 : gate2).hidden = true;
+      if (n === '2') gate2.hidden = false;
+      buildRail();
+      var target = tiers[n].querySelector('section');
+      if (target) {
+        target.scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'start' });
+        target.setAttribute('tabindex', '-1');
+        target.focus({ preventScroll: true });
+      }
+    });
+  });
+
+  buildRail();
+})();
+</script>
+<script>
+/* ---- interactive 3D PCA cloud: hand-written, no external library ---- */
+(function () {
+  var cv = document.getElementById('pca3d');
+  if (!cv || !cv.getContext) return;
+  var ctx = cv.getContext('2d');
+
+  var seed = 20260828;
+  function rnd() { seed = (seed * 1664525 + 1013904223) % 4294967296; return seed / 4294967296; }
+  function gauss() { return (rnd()+rnd()+rnd()+rnd()+rnd()+rnd()-3) / 1.15; }
+
+  /* Groups 2 and 3 are placed along this camera's view axis, so from the
+     starting angle they land on top of each other and read as one cluster.
+     Any rotation pulls them apart. */
+  var YAW0 = -0.62, PITCH0 = 0.30;
+  var yaw = YAW0, pitch = PITCH0;
+  var RX = 2.6, RY = 1.5, RZ = 1.6, D = 14;
+  var SEP = [0.892, 0.475, 1.250], MID = [1.10, 0.28, 0.00];
+  var GROUPS = [
+    { c: [-1.62, 0.10, 0.00], s: 0.40, n: 48 },
+    { c: [MID[0]-SEP[0]/2, MID[1]-SEP[1]/2, MID[2]-SEP[2]/2], s: 0.36, n: 44 },
+    { c: [MID[0]+SEP[0]/2, MID[1]+SEP[1]/2, MID[2]+SEP[2]/2], s: 0.36, n: 42 }
+  ];
+  var pts = [];
+  GROUPS.forEach(function (g, gi) {
+    for (var i = 0; i < g.n; i++) {
+      pts.push({ x: g.c[0]+gauss()*g.s, y: g.c[1]+gauss()*g.s, z: g.c[2]+gauss()*g.s, g: gi });
+    }
+  });
+
+  var CUBE = [[-RX,-RY,-RZ],[RX,-RY,-RZ],[RX,RY,-RZ],[-RX,RY,-RZ],
+              [-RX,-RY,RZ],[RX,-RY,RZ],[RX,RY,RZ],[-RX,RY,RZ]];
+  var EDGES = [[0,1],[1,2],[2,3],[3,0],[4,5],[5,6],[6,7],[7,4],[0,4],[1,5],[2,6],[3,7]];
+  var AXES = [{ b:[RX,-RY,-RZ], t:'PC1' }, { b:[-RX,RY,-RZ], t:'PC2' }, { b:[-RX,-RY,RZ], t:'PC3' }];
+  var O = [-RX,-RY,-RZ];
+
+  var W = 0, H = 0, dpr = 1, scale = 1;
+  function css(v) {
+    return getComputedStyle(document.documentElement).getPropertyValue(v).trim() || '#888';
+  }
+  function proj(x, y, z) {
+    var cy = Math.cos(yaw), sy = Math.sin(yaw), cp = Math.cos(pitch), sp = Math.sin(pitch);
+    var x1 = x*cy + z*sy, z1 = -x*sy + z*cy;
+    var y1 = y*cp - z1*sp, z2 = y*sp + z1*cp;
+    var k = D / (D + z2);
+    return { x: W/2 + x1*k*scale, y: H/2 - y1*k*scale, z: z2, k: k };
+  }
+  function draw() {
+    if (!W || !H) return;
+    var cols = [css('--indigo'), css('--amber'), css('--teal')];
+    var rule = css('--rule'), ink3 = css('--ink3');
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.clearRect(0, 0, W, H);
+
+    var pc = CUBE.map(function (v) { return proj(v[0], v[1], v[2]); });
+    ctx.strokeStyle = rule; ctx.lineWidth = 1; ctx.globalAlpha = 0.9;
+    ctx.beginPath();
+    EDGES.forEach(function (e) { ctx.moveTo(pc[e[0]].x, pc[e[0]].y); ctx.lineTo(pc[e[1]].x, pc[e[1]].y); });
+    ctx.stroke();
+
+    var o = proj(O[0], O[1], O[2]);
+    ctx.font = '600 11px ui-sans-serif, system-ui, sans-serif';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    AXES.forEach(function (ax) {
+      var b = proj(ax.b[0], ax.b[1], ax.b[2]);
+      ctx.strokeStyle = ink3; ctx.globalAlpha = 0.5; ctx.lineWidth = 1.4;
+      ctx.beginPath(); ctx.moveTo(o.x, o.y); ctx.lineTo(b.x, b.y); ctx.stroke();
+      ctx.globalAlpha = 1; ctx.fillStyle = ink3;
+      ctx.fillText(ax.t, o.x + (b.x-o.x)*1.11, o.y + (b.y-o.y)*1.11);
+    });
+
+    pts.map(function (p) { var q = proj(p.x, p.y, p.z); q.g = p.g; return q; })
+       .sort(function (a, b) { return b.z - a.z; })
+       .forEach(function (q) {
+         var t = (q.k - 0.80) / 0.42; t = t < 0 ? 0 : (t > 1 ? 1 : t);
+         ctx.globalAlpha = 0.5 + 0.45*t;
+         ctx.fillStyle = cols[q.g];
+         ctx.beginPath(); ctx.arc(q.x, q.y, 2.7 + 2.2*t, 0, 6.2832); ctx.fill();
+       });
+    ctx.globalAlpha = 1;
+  }
+  function size() {
+    var r = cv.getBoundingClientRect();
+    if (!r.width) return;
+    dpr = Math.min(window.devicePixelRatio || 1, 2);
+    W = r.width; H = r.height;
+    cv.width = Math.round(W*dpr); cv.height = Math.round(H*dpr);
+    scale = Math.min(H * 0.145, W * 0.085);
+    draw();
+  }
+
+  if ('ResizeObserver' in window) new ResizeObserver(size).observe(cv);
+  window.addEventListener('resize', size);
+
+  var drag = null;
+  cv.addEventListener('pointerdown', function (e) {
+    drag = { x: e.clientX, y: e.clientY };
+    cv.setPointerCapture(e.pointerId); e.preventDefault();
+  });
+  cv.addEventListener('pointermove', function (e) {
+    if (!drag) return;
+    yaw += (e.clientX - drag.x) * 0.0085;
+    pitch = Math.max(-1.25, Math.min(1.25, pitch + (e.clientY - drag.y) * 0.0065));
+    drag = { x: e.clientX, y: e.clientY }; draw();
+  });
+  ['pointerup','pointercancel'].forEach(function (t) {
+    cv.addEventListener(t, function () { drag = null; });
+  });
+  cv.addEventListener('keydown', function (e) {
+    var k = { ArrowLeft:[-0.11,0], ArrowRight:[0.11,0], ArrowUp:[0,-0.09], ArrowDown:[0,0.09] }[e.key];
+    if (!k) return;
+    yaw += k[0]; pitch = Math.max(-1.25, Math.min(1.25, pitch + k[1]));
+    draw(); e.preventDefault();
+  });
+  var rst = document.getElementById('pca3d-reset');
+  if (rst) rst.addEventListener('click', function () { yaw = YAW0; pitch = PITCH0; draw(); });
+
+  size();
+  if (window.matchMedia) {
+    var mq = window.matchMedia('(prefers-color-scheme: dark)');
+    if (mq.addEventListener) mq.addEventListener('change', draw); else if (mq.addListener) mq.addListener(draw);
+  }
+})();
+</script>
+

@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="author" content="Dr Daniel Mompel Riera">
+<title>Starch calibration curve · IB Biology B1.1</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=Spectral:ital,wght@0,600;1,400&display=swap">
+<style>
+:root{
+  --ink:#14171F; --ink2:#3D4453; --ink3:#6C7488;
+  --paper:#FCFCFD; --surface:#F1F2F7; --rule:#DEE0EA;
+  --indigo:#2E3A8C; --indigo-ink:#2E3A8C; --indigo-soft:#E7E9F7;
+  --amber:#8F5310; --teal:#0A6455;
+  --serif:Spectral,Georgia,serif;
+  --sans:"IBM Plex Sans",ui-sans-serif,system-ui,sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
+  --shadow:0 1px 2px rgba(20,23,31,.05),0 8px 24px -12px rgba(20,23,31,.18);
+}
+@media(prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --ink:#E9EBF2; --ink2:#B4BACB; --ink3:#848CA1;
+    --paper:#111319; --surface:#1A1D26; --rule:#2C303C;
+    --indigo:#9EA9F0; --indigo-ink:#B7BFF6; --indigo-soft:#1D2240;
+    --amber:#DFA664; --teal:#5FC7B1;
+    --shadow:0 1px 2px rgba(0,0,0,.4),0 8px 24px -12px rgba(0,0,0,.6);
+  }
+}
+:root[data-theme="dark"]{
+  --ink:#E9EBF2; --ink2:#B4BACB; --ink3:#848CA1;
+  --paper:#111319; --surface:#1A1D26; --rule:#2C303C;
+  --indigo:#9EA9F0; --indigo-ink:#B7BFF6; --indigo-soft:#1D2240;
+  --amber:#DFA664; --teal:#5FC7B1;
+  --shadow:0 1px 2px rgba(0,0,0,.4),0 8px 24px -12px rgba(0,0,0,.6);
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--sans);
+  font-size:16.5px;line-height:1.7;-webkit-font-smoothing:antialiased}
+.wrap{max-width:720px;margin:0 auto;padding:56px 22px 90px}
+.eyebrow{font:500 11.5px/1 var(--sans);letter-spacing:.15em;text-transform:uppercase;color:var(--indigo-ink)}
+h1{font-family:var(--serif);font-weight:600;font-size:clamp(2rem,5vw,2.8rem);line-height:1.1;
+  letter-spacing:-.015em;margin:16px 0 0;text-wrap:balance}
+.stand{font-family:var(--serif);font-style:italic;font-size:1.1rem;color:var(--ink2);margin:14px 0 0}
+hr{border:0;border-top:1px solid var(--rule);margin:34px 0}
+h2{font:600 11px/1 var(--sans);letter-spacing:.13em;text-transform:uppercase;
+  color:var(--ink3);margin:38px 0 16px}
+a.card{display:block;text-decoration:none;color:inherit;background:var(--surface);
+  border:1px solid var(--rule);border-radius:11px;padding:18px 20px;margin-bottom:13px;
+  transition:border-color .15s,transform .15s,box-shadow .15s}
+a.card:hover,a.card:focus-visible{border-color:var(--indigo);transform:translateY(-2px);
+  box-shadow:var(--shadow);outline:none}
+.k{font:500 11px/1 var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--indigo-ink)}
+.t{font:600 1.06rem/1.3 var(--sans);margin:7px 0 0}
+.d{margin:6px 0 0;font-size:14.5px;color:var(--ink2)}
+.hero{border-top:3px solid var(--indigo)}
+.hero .k{color:var(--indigo-ink)}
+.file .k{color:var(--amber)}
+.file{border-top:3px solid var(--amber)}
+.note{border-left:3px solid var(--teal);background:color-mix(in srgb,var(--teal) 8%,transparent);
+  padding:14px 18px;border-radius:0 8px 8px 0;margin:26px 0 0;font-size:14.5px;color:var(--ink2)}
+.note b{color:var(--ink)}
+footer{margin-top:44px;font-size:13px;color:var(--ink3)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="eyebrow">IB Biology · B1.1 · Carbohydrates</div>
+  <h1>Making a calibration curve for starch</h1>
+  <p class="stand">Everything you need for the practical, in one place. Start with the worksheet;
+  the rest is here when you get to it.</p>
+  <p style="margin:14px 0 0;font-size:14.5px;color:var(--ink2)">Written by <strong>Dr Daniel Mompel Riera</strong></p>
+
+  <hr>
+
+  <h2>Read this first</h2>
+  <a class="card hero" href="starch-curve-in-r.html">
+    <div class="k">Opens in your browser</div>
+    <div class="t">Starch curves in R &rarr;</div>
+    <p class="d">The optional companion guide. Interactive &mdash; drag the 3D plot. Nothing here
+    assumes you have written a line of code before, and you do not need it to pass the practical.</p>
+  </a>
+
+  <h2>Download and open</h2>
+  <a class="card file" href="calibration-curve-worksheet.docx" download>
+    <div class="k">Word document</div>
+    <div class="t">The practical worksheet</div>
+    <p class="d">Method, apparatus, the standards table, and what you are assessed on. Read it before
+    the lesson.</p>
+  </a>
+  <a class="card file" href="calibration-curve-workbook.xlsx" download>
+    <div class="k">Excel workbook</div>
+    <div class="t">Results workbook</div>
+    <p class="d">Type your readings into the yellow cells on <b>Your data</b> and the graph, gradient
+    and R&sup2; appear on their own. Includes a worked example and a guide to building the chart.</p>
+  </a>
+  <a class="card file" href="starch_curve.R" download>
+    <div class="k">R script</div>
+    <div class="t">starch_curve.R</div>
+    <p class="d">Optional. Put it in the same folder as the workbook, open it in RStudio and press
+    Source. It reads your numbers and does the whole analysis.</p>
+  </a>
+
+  <div class="note">
+    <b>Before the lesson:</b> install <b>Vernier Spectral Analysis</b> from
+    <a href="https://www.vernier.com/product/spectral-analysis/">vernier.com</a> on the laptop you are
+    bringing. It is free. If thirty people download it at once when they sit down, that is ten minutes
+    of the practical gone.
+  </div>
+
+  <footer>Written by <strong>Dr Daniel Mompel Riera</strong>. Free to use and adapt with credit
+  (<a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a>).<br>
+  Last updated August 2026.</footer>
+</div>
+</body>
+</html>
