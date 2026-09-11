@@ -2,10 +2,10 @@
 
 **By Dr Daniel Mompel Riera**
 
-**Live:** https://mompel226.github.io/B11-starch-calibration-curve-pract/
+**Live:** https://nlcsbiology.com/B11-starch-calibration-curve-pract/
 
 **Where it sits:** a *practical* — the documents for a real practical, not a simulation — listed
-under the IB toggle of the [Biology Hub](https://mompel226.github.io/biology-hub/), the front
+under the IB toggle of the [Biology Hub](https://nlcsbiology.com/biology-hub/), the front
 door to every Biology app at NLCS Jeju. The repository was renamed from
 `B11-starch-calibration-curve` on 6 September 2026 so that the name says what kind of thing it
 is; the old address no longer works.
