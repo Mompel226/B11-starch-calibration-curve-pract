@@ -82,13 +82,18 @@ a.card.opt .k{color:var(--indigo-ink)}
 footer{margin-top:46px;padding-top:18px;border-top:1px solid var(--rule);
   font-size:13px;color:var(--ink3)}
 footer a{color:var(--ink3)}
+
+/* the maker's name, wherever it appears: a quiet link out to who made this. Same dotted
+   underline the header credit already uses, so it reads as a link without shouting. */
+.by-me{color:inherit;text-decoration:none;border-bottom:1px dotted currentColor}
+.by-me:hover,.by-me:focus-visible{border-bottom-style:solid}
 </style>
 </head>
 <body>
 <div class="wrap">
   <div class="eyebrow">IB Biology · B1.1 · Carbohydrates</div>
   <h1>Making a calibration curve for starch</h1>
-  <p class="by">Everything for the practical, in one place · Dr Daniel Mompel Riera</p>
+  <p class="by">Everything for the practical, in one place · <a class="by-me" href="https://github.com/Mompel226" target="_blank" rel="noopener" title="Who made this — and everything else that is free to use">Dr Daniel Mompel Riera</a></p>
 
   <div class="first">
     <span class="badge">Start here — before the lesson</span>
@@ -137,8 +142,8 @@ footer a{color:var(--ink3)}
   </a>
 
   <footer>
-    Written by <b>Dr Daniel Mompel Riera</b>. Free to use and adapt with credit
-    (<a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a>).<br>
+    Written by <a class="by-me" href="https://github.com/Mompel226" target="_blank" rel="noopener" title="Who made this — and everything else that is free to use"><b>Dr Daniel Mompel Riera</b></a>. Free for teaching, not for selling
+    (<a href="https://creativecommons.org/licenses/by-nc-sa/4.0/">CC BY-NC-SA 4.0</a>).<br>
     Last updated August 2026.
   </footer>
 </div>
