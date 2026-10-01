@@ -1174,8 +1174,11 @@ IB Biology B1.1 &middot; Tool 2, Tool 3 and Inquiry 2.</p>
 </main>
 </div>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/r.min.js"></script>
+<!-- R colours for the code (highlight.js, from cdnjs). integrity is each file's SHA-384: if cdnjs ever sends a different
+     file, the browser refuses it and the code shows without colours. A new version needs new hashes:
+     curl -s <address> | openssl dgst -sha384 -binary | openssl base64 -A -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js" integrity="sha384-F/bZzf7p3Joyp5psL90p/p89AZJsndkSoGwRpXcZhleCWhd8SnRuoYo4d0yirjJp" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/r.min.js" integrity="sha384-+z7INDMj7HMs67TuLfoyKa6TUHdTweahANtJ1Spg6uCa8/f1jFUf238jj53TDxmP" crossorigin="anonymous"></script>
 <script>
 (function () {
   // syntax highlighting is a bonus; the page is fully readable without it

@@ -11,7 +11,8 @@ door to every Biology app at NLCS Jeju. The repository was renamed from
 is; the old address no longer works.
 
 A complete, classroom-tested set of materials for the starch–iodine calibration practical:
-worksheet, self-calculating results workbook, and an optional guide to doing the analysis in R.
+worksheet, self-calculating results workbook, and a one-click R script; the optional guide to doing
+the analysis in R now lives on [Learn R](https://nlcsbiology.com/learn-r/starch.html).
 
 ---
 
@@ -80,7 +81,7 @@ per-tube offset that repeating and averaging cannot remove.
 | `index.html` | Landing page — the one link to give students |
 | `calibration-curve-worksheet.docx` | The student worksheet: method, apparatus, standards table, troubleshooting, assessment criteria |
 | `calibration-curve-workbook.xlsx` | Results workbook — students type readings into the yellow cells and the graph, gradient and R² appear automatically |
-| `starch-curve-in-r.html` | Optional companion guide: the same analysis in R, from installing it to reading off an unknown |
+| `starch-curve-in-r.html` | The old R guide, kept for old links; the guide now lives on Learn R ([nlcsbiology.com/learn-r/starch.html](https://nlcsbiology.com/learn-r/starch.html)) |
 | `starch_curve.R` | One-click script — reads the workbook, does the whole analysis, saves the graph |
 
 ### The workbook has four tabs
@@ -125,8 +126,7 @@ it badly is the single easiest way to ruin the whole class's data.
 Take it, change it, use it. If you find an error — especially in the chemistry — please open an
 issue so it gets fixed for everyone.
 
-Licence: [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/) — use and adapt freely,
-including commercially, as long as you credit **Dr Daniel Mompel Riera**.
+Licence: see [Licence](#licence) below — free for teaching, with the credit kept; not for selling.
 
 ## Sources for the claims above
 
