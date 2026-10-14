@@ -82,8 +82,9 @@ a.card.opt .k{color:var(--indigo-ink)}
 footer{margin-top:46px;padding-top:18px;border-top:1px solid var(--rule);
   font-size:13px;color:var(--ink3)}
 footer a{color:var(--ink3)}
-.up{display:inline-block;margin:0 0 20px;font-size:12.5px;line-height:1;color:var(--ink3);text-decoration:none}
-.up:hover,.up:focus-visible{color:var(--ink);text-decoration:underline}
+/* the way back (14 Oct 2026, Daniel: pupils missed it): a solid pill in this site's own colours */
+.up{display:inline-flex;align-items:center;flex:none;white-space:nowrap;min-height:34px;margin:0 0 20px;padding:0 16px 0 13px;font-weight:650;font-size:14px;line-height:1;letter-spacing:0;text-transform:none;color:var(--paper);background:var(--teal);border:0;border-radius:999px;text-decoration:none;box-shadow:0 1px 2px rgba(0,0,0,.2)}
+.up:hover,.up:focus-visible{background:var(--teal);color:var(--paper);text-decoration:none;filter:brightness(1.12)}
 
 /* the maker's name, wherever it appears: a quiet link out to who made this. Same dotted
    underline the header credit already uses, so it reads as a link without shouting. */
@@ -93,7 +94,7 @@ footer a{color:var(--ink3)}
 </head>
 <body>
 <div class="wrap">
-  <a class="up" href="https://nlcsbiology.com/biology-hub/">← Biology Hub</a>
+  <a class="up" href="https://nlcsbiology.com/biology-hub/">← Back to Biology Hub</a>
   <div class="eyebrow">IB Biology · B1.1 · Carbohydrates</div>
   <h1>Making a calibration curve for starch</h1>
   <p class="by">Everything for the practical, in one place · <a class="by-me" href="https://github.com/Mompel226" target="_blank" rel="noopener" title="Who made this — and everything else that is free to use">Dr Daniel Mompel Riera</a></p>
