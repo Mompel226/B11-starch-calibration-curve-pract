@@ -1,4 +1,4 @@
-# Starch calibration curve — IB Biology B1.1
+# IB Biology practical: starch calibration curve (B1.1)
 
 **By Dr Daniel Mompel Riera**
 
